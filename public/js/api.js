@@ -26,3 +26,40 @@ async function apiFetch(path, options = {}) {
   }
   return data;
 }
+
+// อัปโหลดไฟล์ (multipart) — ปล่อยให้เบราว์เซอร์ตั้ง Content-Type/boundary เอง
+async function apiUpload(path, formData) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+
+  const res = await fetch(path, { method: 'POST', headers, body: formData });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* ไม่มี body */ }
+
+  if (res.status === 401 && token) {
+    clearToken();
+    if (!location.pathname.endsWith('/login.html')) location.href = '/login.html';
+  }
+  if (!res.ok) {
+    throw new Error((data && data.error) || ('อัปโหลดไม่สำเร็จ (' + res.status + ')'));
+  }
+  return data;
+}
+
+// เปิดไฟล์แนบในแท็บใหม่ โดยส่ง token ผ่าน header (ไม่ใส่ token ใน URL)
+async function openAttachment(attId) {
+  const token = getToken();
+  try {
+    const res = await fetch('/api/attachments/' + attId + '/download', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+    });
+    if (!res.ok) { alert('เปิดไฟล์ไม่สำเร็จ'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    alert('เปิดไฟล์ไม่สำเร็จ');
+  }
+}

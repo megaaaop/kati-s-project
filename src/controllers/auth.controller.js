@@ -6,6 +6,9 @@ const userModel = require('../models/user.model');
 const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL = '8h';
 const VALID_ROLES = ['student', 'teacher', 'admin', 'parent'];
+// บทบาทที่มีสิทธิ์พิเศษ ต้องใส่ "รหัสลับ" (STAFF_SIGNUP_CODE) ตอนสมัคร
+// กันไม่ให้ใครก็ได้สมัครเป็นครู/แอดมินเองแล้วเข้าถึงข้อมูลนักเรียนทุกคน
+const STAFF_ROLES = ['teacher', 'admin'];
 
 // ข้อมูลผู้ใช้ที่ส่งกลับไปฝั่ง client (ไม่รวม password_hash)
 function publicUser(u) {
@@ -21,13 +24,19 @@ function publicUser(u) {
 
 async function register(req, res, next) {
   try {
-    const { full_name, email, password, role, student_id, class_room } = req.body || {};
+    const { full_name, email, password, role, student_id, class_room, staff_code } = req.body || {};
 
     if (!full_name || !email || !password || !role) {
       return res.status(400).json({ error: 'กรอกชื่อ-นามสกุล อีเมล รหัสผ่าน และบทบาทให้ครบ' });
     }
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: 'บทบาทไม่ถูกต้อง' });
+    }
+    // สมัครเป็นครู/แอดมิน ต้องมีรหัสลับที่ตรงกับค่าใน .env เท่านั้น
+    if (STAFF_ROLES.includes(role)) {
+      if (!process.env.STAFF_SIGNUP_CODE || staff_code !== process.env.STAFF_SIGNUP_CODE) {
+        return res.status(403).json({ error: 'รหัสลับสำหรับครู/แอดมินไม่ถูกต้อง' });
+      }
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' });

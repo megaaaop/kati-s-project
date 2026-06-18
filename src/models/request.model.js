@@ -29,4 +29,32 @@ function findById(id) {
   return db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(id);
 }
 
-module.exports = { createRequest, listForUser, findById };
+// รายละเอียดคำขอพร้อมชื่อผู้ยื่นและชื่อครูที่รีวิว (สำหรับหน้า detail)
+function findDetailById(id) {
+  return db.prepare(`
+    SELECT lr.*,
+           s.full_name  AS student_name,
+           s.student_id AS student_code,
+           s.class_room AS class_room,
+           r.full_name  AS reviewer_name
+    FROM leave_requests lr
+    JOIN users s ON s.id = lr.student_id
+    LEFT JOIN users r ON r.id = lr.reviewed_by
+    WHERE lr.id = ?
+  `).get(id);
+}
+
+// ครูอนุมัติ/ปฏิเสธ (F5): บันทึกสถานะ หมายเหตุ ผู้รีวิว และเวลา
+function updateReview({ id, status, teacher_note, reviewed_by }) {
+  db.prepare(`
+    UPDATE leave_requests
+    SET status = @status,
+        teacher_note = @teacher_note,
+        reviewed_by = @reviewed_by,
+        reviewed_at = CURRENT_TIMESTAMP
+    WHERE id = @id
+  `).run({ id, status, teacher_note: teacher_note || null, reviewed_by });
+  return findDetailById(id);
+}
+
+module.exports = { createRequest, listForUser, findById, findDetailById, updateReview };

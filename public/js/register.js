@@ -2,13 +2,15 @@ const form = document.getElementById('registerForm');
 const errBox = document.getElementById('error');
 const roleSel = document.getElementById('role');
 const studentFields = document.getElementById('studentFields');
+const staffFields = document.getElementById('staffFields');
 
-// แสดงช่องรหัสนักเรียน/ห้อง เฉพาะตอนเลือกบทบาทเป็นนักเรียน
-function toggleStudentFields() {
+// แสดงช่องให้ตรงกับบทบาท: นักเรียน→รหัสนักเรียน/ห้อง, ครู/แอดมิน→รหัสลับ
+function toggleRoleFields() {
   studentFields.style.display = roleSel.value === 'student' ? '' : 'none';
+  staffFields.style.display = (roleSel.value === 'teacher' || roleSel.value === 'admin') ? '' : 'none';
 }
-roleSel.addEventListener('change', toggleStudentFields);
-toggleStudentFields();
+roleSel.addEventListener('change', toggleRoleFields);
+toggleRoleFields();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -23,6 +25,9 @@ form.addEventListener('submit', async (e) => {
   if (payload.role === 'student') {
     payload.student_id = form.student_id.value.trim();
     payload.class_room = form.class_room.value.trim();
+  }
+  if (payload.role === 'teacher' || payload.role === 'admin') {
+    payload.staff_code = form.staff_code.value;
   }
 
   if (payload.password.length < 6) {

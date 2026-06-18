@@ -1,5 +1,6 @@
-// ตรรกะคำขอลา (F2 ยื่นใบลา + F4 ดูสถานะ/ประวัติเบื้องต้น)
+// ตรรกะคำขอลา (F2 ยื่นใบลา + F4 ดูสถานะ/ประวัติ + F5 อนุมัติ/ปฏิเสธ)
 const requestModel = require('../models/request.model');
+const attachmentModel = require('../models/attachment.model');
 
 const VALID_TYPES = ['sick', 'personal', 'activity'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -45,18 +46,47 @@ function listRequests(req, res, next) {
 
 function getRequest(req, res, next) {
   try {
-    const request = requestModel.findById(Number(req.params.id));
+    const request = requestModel.findDetailById(Number(req.params.id));
     if (!request) {
       return res.status(404).json({ error: 'ไม่พบคำขอ' });
     }
-    // นักเรียนดูได้เฉพาะคำขอของตัวเอง
+    // นักเรียนดูได้เฉพาะคำขอของตัวเอง (ครู/แอดมินดูได้ทั้งหมด)
     if (req.user.role === 'student' && request.student_id !== req.user.id) {
       return res.status(403).json({ error: 'ไม่มีสิทธิ์ดูคำขอนี้' });
     }
-    return res.json({ request });
+    const attachments = attachmentModel.listForRequest(request.id)
+      .map((a) => ({ id: a.id, file_name: a.file_name, uploaded_at: a.uploaded_at }));
+    return res.json({ request, attachments });
   } catch (e) {
     next(e);
   }
 }
 
-module.exports = { createRequest, listRequests, getRequest };
+// F5: ครูอนุมัติ/ปฏิเสธ — ใช้ตัวเดียวกัน ต่างกันที่ค่า status
+function reviewRequest(status) {
+  return (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      const request = requestModel.findById(id);
+      if (!request) {
+        return res.status(404).json({ error: 'ไม่พบคำขอ' });
+      }
+      if (request.status !== 'pending') {
+        return res.status(409).json({ error: 'คำขอนี้ถูกพิจารณาไปแล้ว' });
+      }
+      const teacher_note = req.body && req.body.teacher_note ? String(req.body.teacher_note).trim() : '';
+      if (status === 'rejected' && !teacher_note) {
+        return res.status(400).json({ error: 'กรุณาระบุเหตุผลที่ไม่อนุมัติ' });
+      }
+      const updated = requestModel.updateReview({ id, status, teacher_note, reviewed_by: req.user.id });
+      return res.json({ request: updated });
+    } catch (e) {
+      next(e);
+    }
+  };
+}
+
+const approveRequest = reviewRequest('approved');
+const rejectRequest = reviewRequest('rejected');
+
+module.exports = { createRequest, listRequests, getRequest, approveRequest, rejectRequest };

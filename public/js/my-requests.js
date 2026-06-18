@@ -1,12 +1,5 @@
 let currentUser = null;
 
-const TYPE_LABEL = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม' };
-const STATUS = {
-  pending: { t: 'รออนุมัติ', c: 'status-pending' },
-  approved: { t: 'อนุมัติแล้ว', c: 'status-approved' },
-  rejected: { t: 'ไม่อนุมัติ', c: 'status-rejected' },
-};
-
 (async () => {
   currentUser = await requireAuth(['student']);
   if (currentUser) load();
@@ -33,22 +26,21 @@ async function load() {
 }
 
 function renderCard(r) {
-  const s = STATUS[r.status] || { t: r.status, c: '' };
-  const range = r.start_date === r.end_date ? r.start_date : (r.start_date + ' ถึง ' + r.end_date);
-  return `<div class="card req-card mb-3"><div class="card-body">
-    <div class="d-flex justify-content-between align-items-start gap-2">
-      <div>
-        <h5 class="mb-1">${TYPE_LABEL[r.leave_type] || escapeHtml(r.leave_type)}</h5>
-        <div class="muted small mb-2">📅 ${escapeHtml(range)}</div>
+  const s = statusInfo(r.status);
+  const note = r.teacher_note
+    ? `<div class="muted small mt-1">📝 หมายเหตุครู: ${escapeHtml(r.teacher_note)}</div>` : '';
+  return `<a class="card req-card mb-3 text-decoration-none text-reset" href="/student/request-detail.html?id=${r.id}">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div>
+          <h5 class="mb-1">${typeLabel(r.leave_type)}</h5>
+          <div class="muted small mb-1">📅 ${escapeHtml(dateRange(r.start_date, r.end_date))}</div>
+        </div>
+        <span class="status-badge ${s.c}">${s.t}</span>
       </div>
-      <span class="status-badge ${s.c}">${s.t}</span>
+      <p class="mb-0">${escapeHtml(r.reason)}</p>
+      ${note}
+      <div class="muted small mt-1">ยื่นเมื่อ ${escapeHtml(r.created_at)}</div>
     </div>
-    <p class="mb-1">${escapeHtml(r.reason)}</p>
-    <div class="muted small">ยื่นเมื่อ ${escapeHtml(r.created_at)}</div>
-  </div></div>`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  </a>`;
 }

@@ -37,7 +37,15 @@
             <option value="admin">ผู้ดูแลระบบ</option>
             <option value="parent">ผู้ปกครอง</option>
           </select>
-          <div class="form-text">ช่วงพัฒนา (MVP) เลือกบทบาทได้เองเพื่อทดสอบ — รอบใช้งานจริงจะให้แอดมินกำหนด</div>
+          <div class="form-text">นักเรียน/ผู้ปกครองสมัครได้เลย — ครู/แอดมินต้องใช้รหัสลับ</div>
+        </div>
+
+        <div id="staffFields" style="display:none">
+          <div class="mb-3">
+            <label class="form-label">รหัสลับสำหรับครู/แอดมิน</label>
+            <input type="password" name="staff_code" class="form-control" autocomplete="off">
+            <div class="form-text">ขอรหัสนี้จากผู้ดูแลระบบ</div>
+          </div>
         </div>
 
         <div id="studentFields">

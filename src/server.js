@@ -10,6 +10,7 @@ if (!process.env.JWT_SECRET) {
 
 const authRoutes = require('./routes/auth.routes');
 const requestRoutes = require('./routes/requests.routes');
+const attachmentRoutes = require('./routes/attachments.routes');
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use(express.json());
 // ----- API -----
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/attachments', attachmentRoutes);
 
 // API endpoint ที่ไม่รู้จัก → ตอบ JSON 404 (กันไม่ให้ตกไปที่ static)
 app.use('/api', (req, res) => res.status(404).json({ error: 'ไม่พบ endpoint นี้' }));
