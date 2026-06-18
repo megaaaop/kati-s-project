@@ -1,0 +1,83 @@
+/* ธีมทางการ + ทันสมัย: indigo/slate + ฟอนต์ Sarabun (spec §10) */
+:root {
+  --brand: #4f46e5;
+  --brand-dark: #3730a3;
+  --brand-soft: #eef2ff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --bg: #f8fafc;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Sarabun', 'Segoe UI', system-ui, -apple-system, 'Noto Sans Thai', sans-serif;
+  min-height: 100vh;
+}
+
+/* ---- Navbar / brand ---- */
+.brand-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #0ea5e9 100%);
+}
+.navbar-brand { font-weight: 700; letter-spacing: .2px; }
+.navbar .nav-link { color: rgba(255, 255, 255, .9) !important; }
+.navbar .nav-link.active, .navbar .nav-link:hover { color: #fff !important; }
+
+/* ---- หน้า login/register ---- */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 55%, #0ea5e9 100%);
+}
+.auth-card {
+  width: 100%; max-width: 440px;
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, .25);
+  padding: 36px 32px;
+}
+.auth-card h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+.auth-card .sub { color: var(--muted); font-size: 14.5px; margin-bottom: 22px; }
+
+/* ---- การ์ดทั่วไป ---- */
+.card { border: 1px solid var(--line); border-radius: var(--radius); }
+.req-card { transition: box-shadow .15s ease, transform .15s ease; }
+.req-card:hover { box-shadow: 0 6px 18px rgba(15, 23, 42, .08); transform: translateY(-1px); }
+
+.btn-brand { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+.btn-brand:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+a { color: var(--brand-dark); }
+
+.form-control:focus, .form-select:focus {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 .2rem rgba(79, 70, 229, .15);
+}
+
+/* ---- ป้ายสถานะ (สีสื่อความหมาย spec §10) ---- */
+.status-badge {
+  display: inline-block; font-size: 13px; font-weight: 600;
+  padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+}
+.status-pending { background: #fef3c7; color: #b45309; }
+.status-approved { background: #dcfce7; color: #15803d; }
+.status-rejected { background: #ffe4e6; color: #be123c; }
+
+/* ---- การ์ดเมนูบนแดชบอร์ด ---- */
+.tile {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: #fff; padding: 24px; height: 100%;
+  transition: box-shadow .15s ease, transform .15s ease, border-color .15s;
+}
+.tile:hover { box-shadow: 0 10px 24px rgba(15, 23, 42, .1); transform: translateY(-2px); border-color: #c7d2fe; color: inherit; }
+.tile .ico { font-size: 30px; }
+.tile h3 { font-size: 18px; margin: 10px 0 4px; }
+.tile p { color: var(--muted); font-size: 14px; margin: 0; }
+
+.page-wrap { max-width: 880px; margin: 0 auto; padding: 28px 18px 60px; }
+.muted { color: var(--muted); }
