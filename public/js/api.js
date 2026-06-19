@@ -47,6 +47,26 @@ async function apiUpload(path, formData) {
   return data;
 }
 
+// ดาวน์โหลดไฟล์ (เช่น CSV) โดยส่ง token ผ่าน header แล้วบันทึกเป็นไฟล์
+async function downloadFile(path, filename) {
+  const token = getToken();
+  try {
+    const res = await fetch(path, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+    if (!res.ok) { alert('ดาวน์โหลดไม่สำเร็จ'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (e) {
+    alert('ดาวน์โหลดไม่สำเร็จ');
+  }
+}
+
 // เปิดไฟล์แนบในแท็บใหม่ โดยส่ง token ผ่าน header (ไม่ใส่ token ใน URL)
 async function openAttachment(attId) {
   const token = getToken();

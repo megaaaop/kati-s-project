@@ -114,6 +114,22 @@ const recordDecision = db.transaction(({ request, approver, decision, note }) =>
   return findById(request.id);
 });
 
+// แถวข้อมูลสำหรับสถิติ ตามขอบเขตของผู้ใช้ (admin/ผู้บริหารเห็นทั้งหมด; ผู้อนุมัติเห็นเฉพาะขอบเขตตน)
+function statsRows(user) {
+  const cols = `lr.id, lr.leave_type, lr.status, lr.current_level, lr.created_at,
+                s.full_name AS student_name, s.student_id AS student_code, s.grade_level, s.class_room`;
+  const FROM = `FROM leave_requests lr JOIN users s ON s.id = lr.student_id`;
+  // ใช้ขอบเขตเดียวกับ inScope: เห็นทั้งโรงเรียนเฉพาะแอดมิน หรือผู้ที่ดูแล "ทุกระดับ"
+  if (user.role === 'admin' || user.grade_level === GRADE_ALL) {
+    return db.prepare(`SELECT ${cols} ${FROM}`).all();
+  }
+  if (user.role === 'homeroom') {
+    return db.prepare(`SELECT ${cols} ${FROM} WHERE s.advisor_id = ?`).all(user.id);
+  }
+  // gradehead/dormhead/deputy/principal ที่ผูกกับระดับชั้นเฉพาะ → เห็นเฉพาะระดับนั้น
+  return db.prepare(`SELECT ${cols} ${FROM} WHERE s.grade_level = ?`).all(user.grade_level || '');
+}
+
 // ประวัติขั้นอนุมัติของคำขอ (พร้อมชื่อผู้ตัดสิน)
 function stepsForRequest(requestId) {
   return db.prepare(`
@@ -128,5 +144,5 @@ function stepsForRequest(requestId) {
 
 module.exports = {
   createRequest, findById, findDetailById, listForUser,
-  recordDecision, stepsForRequest, inScope,
+  recordDecision, stepsForRequest, inScope, statsRows,
 };

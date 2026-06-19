@@ -13,6 +13,7 @@ const requestRoutes = require('./routes/requests.routes');
 const attachmentRoutes = require('./routes/attachments.routes');
 const notificationRoutes = require('./routes/notifications.routes');
 const userRoutes = require('./routes/users.routes');
+const statsRoutes = require('./routes/stats.routes');
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/stats', statsRoutes);
 
 // API endpoint ที่ไม่รู้จัก → ตอบ JSON 404 (กันไม่ให้ตกไปที่ static)
 app.use('/api', (req, res) => res.status(404).json({ error: 'ไม่พบ endpoint นี้' }));

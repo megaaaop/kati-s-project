@@ -144,3 +144,28 @@ test('notifications: list + mark read', async () => {
   await j('/api/notifications/' + n.d.notifications[0].id + '/read', { method: 'PUT', token: tok.stu });
   assert.equal((await j('/api/notifications', { token: tok.stu })).d.unread, n.d.unread - 1);
 });
+
+test('stats: aggregates for admin, scoped for approver, blocked for student', async () => {
+  const s = await j('/api/stats', { token: tok.adm });
+  assert.equal(s.status, 200);
+  assert.ok(s.d.total >= 2);
+  assert.equal(typeof s.d.byStatus.approved, 'number');
+  assert.ok(Array.isArray(s.d.byMonth) && Array.isArray(s.d.topStudents));
+  assert.equal((await j('/api/stats', { token: tok.home })).status, 200); // approver scoped
+  assert.equal((await j('/api/stats', { token: tok.stu })).status, 403);  // student blocked
+
+  // ผู้บริหารที่ผูกระดับเฉพาะ ต้องเห็นเฉพาะระดับตน (lock การแก้ scope ของ stats)
+  await reg({ full_name: 'รองผอ ม.99', email: 'dep99@t.com', password: 'pass123', role: 'deputy', grade_level: 'ม.99', staff_code: CODE });
+  const tDep99 = await login('dep99@t.com');
+  assert.equal((await j('/api/stats', { token: tDep99 })).d.total, 0); // ไม่มีนักเรียน ม.99
+  assert.ok(s.d.total > 0); // แอดมินเห็นทั้งหมด
+});
+
+test('CSV export: 200, text/csv, BOM + Thai header', async () => {
+  const r = await fetch(base + '/api/requests/export.csv', { headers: { Authorization: 'Bearer ' + tok.adm } });
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get('content-type'), /text\/csv/);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  assert.deepEqual([buf[0], buf[1], buf[2]], [0xEF, 0xBB, 0xBF]); // UTF-8 BOM ให้ Excel อ่านไทยถูก
+  assert.match(new TextDecoder('utf-8').decode(buf), /นักเรียน/);
+});

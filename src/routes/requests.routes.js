@@ -11,6 +11,7 @@ router.use(verifyToken);
 
 router.post('/', requireRole('student'), ctrl.createRequest); // เฉพาะนักเรียนยื่น
 router.get('/', ctrl.listRequests);                           // กรองตาม role ในโมเดล
+router.get('/export.csv', ctrl.exportCsv);                    // ต้องมาก่อน /:id
 router.get('/:id', ctrl.getRequest);
 
 // สายอนุมัติหลายขั้น: ผู้อนุมัติขั้นปัจจุบันตัดสิน (อนุมัติ/ปฏิเสธ)

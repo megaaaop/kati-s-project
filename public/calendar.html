@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ปฏิทินวันลา · ระบบยื่นใบลา</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <div id="appnav"></div>
+  <div class="page-wrap" style="max-width:1040px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <h2 class="mb-0">🗓️ ปฏิทินวันลา</h2>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="move(-1)">‹ ก่อนหน้า</button>
+        <strong id="calTitle" style="min-width:140px;text-align:center"></strong>
+        <button class="btn btn-outline-secondary btn-sm" onclick="move(1)">ถัดไป ›</button>
+      </div>
+    </div>
+    <div class="mb-2 small">
+      <span class="status-badge status-pending">รอพิจารณา</span>
+      <span class="status-badge status-approved">อนุมัติแล้ว</span>
+      <span class="status-badge status-rejected">ไม่อนุมัติ</span>
+    </div>
+    <div id="cal"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/display.js"></script>
+  <script src="/js/shell.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/calendar.js"></script>
+</body>
+</html>

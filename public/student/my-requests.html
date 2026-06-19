@@ -13,7 +13,10 @@
   <div class="page-wrap">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0">📂 คำขอของฉัน</h2>
-      <a href="/student/request-new.html" class="btn btn-brand btn-sm">+ ยื่นใบลาใหม่</a>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="downloadFile('/api/requests/export.csv','my-leaves.csv')">⬇️ CSV</button>
+        <a href="/student/request-new.html" class="btn btn-brand btn-sm">+ ยื่นใบลาใหม่</a>
+      </div>
     </div>
     <div id="createdAlert" class="alert alert-success d-none" role="alert">✅ ส่งคำขอเรียบร้อยแล้ว เข้าสู่สายอนุมัติ</div>
     <div id="empty" class="card d-none"><div class="card-body text-center py-5 muted">

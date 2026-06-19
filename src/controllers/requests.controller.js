@@ -66,6 +66,36 @@ function listRequests(req, res, next) {
   }
 }
 
+// ----- Export CSV (เฟส 5) — รายการที่ผู้ใช้คนนี้เห็นได้ -----
+function exportCsv(req, res, next) {
+  try {
+    const user = userModel.findById(req.user.id);
+    const rows = requestModel.listForUser(user);
+    const TYPE = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม' };
+    const STAT = { pending: 'รอพิจารณา', approved: 'อนุมัติแล้ว', rejected: 'ไม่อนุมัติ' };
+    const esc = (v) => {
+      let s = v == null ? '' : String(v);
+      // กัน CSV/formula injection: เซลล์ที่ขึ้นต้นด้วย = + - @ (หรือ tab/CR) เติม ' นำหน้า
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const header = ['รหัส', 'นักเรียน', 'ห้อง', 'ระดับชั้น', 'ประเภท', 'วันเริ่ม', 'วันสิ้นสุด', 'สถานะ', 'ยื่นเมื่อ'];
+    const lines = [header.join(',')];
+    for (const r of rows) {
+      const name = r.student_name || (user.role === 'student' ? user.full_name : '');
+      lines.push([
+        r.id, name, r.class_room || '', r.grade_level || '',
+        TYPE[r.leave_type] || r.leave_type, r.start_date, r.end_date,
+        STAT[r.status] || r.status, r.created_at,
+      ].map(esc).join(','));
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="leave-requests.csv"');
+    // นำหน้าด้วย BOM ให้ Excel อ่านภาษาไทยถูก
+    return res.send(String.fromCharCode(0xFEFF) + lines.join('\r\n'));
+  } catch (e) { next(e); }
+}
+
 // ----- รายละเอียดคำขอ + ไฟล์แนบ + ประวัติขั้นอนุมัติ -----
 function getRequest(req, res, next) {
   try {
@@ -188,4 +218,4 @@ function notifyDecision({ request, updated, student, decision, note, levelLabel 
   });
 }
 
-module.exports = { createRequest, listRequests, getRequest, decideRequest };
+module.exports = { createRequest, listRequests, exportCsv, getRequest, decideRequest };

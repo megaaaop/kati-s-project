@@ -11,7 +11,10 @@
 <body>
   <div id="appnav"></div>
   <div class="page-wrap">
-    <h2 class="mb-3">📋 คิวอนุมัติของฉัน</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">📋 คิวอนุมัติของฉัน</h2>
+      <button class="btn btn-outline-secondary btn-sm" onclick="downloadFile('/api/requests/export.csv','leave-requests.csv')">⬇️ Export CSV</button>
+    </div>
     <div class="btn-group mb-3" role="group">
       <button type="button" class="btn btn-outline-secondary active" data-filter="queue">รอฉันพิจารณา <span id="qcount" class="badge bg-danger d-none"></span></button>
       <button type="button" class="btn btn-outline-secondary" data-filter="all">ทั้งหมดที่เกี่ยวข้อง</button>

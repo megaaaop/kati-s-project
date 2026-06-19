@@ -9,9 +9,15 @@ function navLinks(role) {
   ];
   if (APPROVER_ROLES_CLIENT.includes(role)) return [
     { key: 'queue', label: 'คิวอนุมัติ', href: '/approver/queue.html' },
+    { key: 'stats', label: 'สถิติ', href: '/stats.html' },
+    { key: 'calendar', label: 'ปฏิทิน', href: '/calendar.html' },
   ];
   if (role === 'parent') return [{ key: 'children', label: 'การลาของบุตรหลาน', href: '/parent/children.html' }];
-  if (role === 'admin') return [{ key: 'users', label: 'จัดการผู้ใช้', href: '/admin/users.html' }];
+  if (role === 'admin') return [
+    { key: 'users', label: 'จัดการผู้ใช้', href: '/admin/users.html' },
+    { key: 'stats', label: 'สถิติ', href: '/stats.html' },
+    { key: 'calendar', label: 'ปฏิทิน', href: '/calendar.html' },
+  ];
   return [];
 }
 function homeFor(role) { const l = navLinks(role); return l.length ? l[0].href : '/login.html'; }

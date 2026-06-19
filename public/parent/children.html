@@ -11,7 +11,10 @@
 <body>
   <div id="appnav"></div>
   <div class="page-wrap">
-    <h2 class="mb-3">👨‍👩‍👧 การลาของบุตรหลาน</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">👨‍👩‍👧 การลาของบุตรหลาน</h2>
+      <button class="btn btn-outline-secondary btn-sm" onclick="downloadFile('/api/requests/export.csv','children-leaves.csv')">⬇️ CSV</button>
+    </div>
     <div id="list"></div>
   </div>
 
