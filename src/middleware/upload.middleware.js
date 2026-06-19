@@ -1,12 +1,5 @@
-// รับไฟล์แนบหลักฐาน (F3) ด้วย Multer — จำกัดชนิด/ขนาด และตั้งชื่อไฟล์แบบสุ่ม
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
+// รับไฟล์แนบ (F3) ด้วย Multer — เก็บใน memory (buffer) แล้วส่งต่อให้ storage service
 const multer = require('multer');
-
-// ที่เก็บไฟล์แนบ ตั้งได้ผ่าน env (ชี้ไป persistent disk ตอน deploy)
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // ชนิดไฟล์ที่อนุญาต → นามสกุลที่จะใช้เก็บ (ไม่เชื่อชื่อไฟล์เดิมจากผู้ใช้)
 const MIME_EXT = {
@@ -15,26 +8,18 @@ const MIME_EXT = {
   'application/pdf': '.pdf',
 };
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = MIME_EXT[file.mimetype] || '';
-    cb(null, crypto.randomBytes(16).toString('hex') + ext);
-  },
-});
-
 function fileFilter(req, file, cb) {
   if (MIME_EXT[file.mimetype]) cb(null, true);
   else cb(new Error('รองรับเฉพาะไฟล์รูป (JPG/PNG) หรือ PDF เท่านั้น'));
 }
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-// ห่อ upload.single ให้แปลง error ของ multer เป็น JSON 400 (ไม่ตกไปที่ 500)
+// ห่อ upload.single ให้แปลง error ของ multer เป็น JSON 400
 function handleUpload(req, res, next) {
   upload.single('file')(req, res, (err) => {
     if (err) {
@@ -45,4 +30,4 @@ function handleUpload(req, res, next) {
   });
 }
 
-module.exports = { handleUpload, UPLOAD_DIR };
+module.exports = { handleUpload, MIME_EXT };

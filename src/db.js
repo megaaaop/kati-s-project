@@ -1,20 +1,75 @@
-// เปิดการเชื่อมต่อ SQLite และสร้างตารางตาม schema.sql ตอนเริ่มแอป
-// ใช้ better-sqlite3 (synchronous, อ่านง่าย). ถ้า native build ล้มเหลว ดู fallback ใน README/แผนงาน
+// ชั้นฐานข้อมูล (Phase 6) — Postgres ผ่าน pg (prod/Supabase) หรือ pglite (dev/test, in-memory)
+// เลือกอัตโนมัติ: ถ้ามี DATABASE_URL = ใช้ Postgres จริง; ไม่งั้นใช้ pglite (สร้าง schema ให้เลย)
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
 
-// ที่อยู่ไฟล์ DB ตั้งได้ผ่าน env (เช่นชี้ไป persistent disk ตอน deploy หรือไฟล์ชั่วคราวตอนเทสต์)
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'absence.db');
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+// ใช้ pglite เมื่อ: โหมดทดสอบ หรือ ไม่ได้ตั้ง DATABASE_URL (dev). prod ตั้ง DATABASE_URL → ใช้ Postgres จริง
+const usePglite = process.env.NODE_ENV === 'test' || !process.env.DATABASE_URL;
+let _client = null;
+let _readyP = null;
 
-const db = new Database(DB_PATH);
+function ready() {
+  if (_readyP) return _readyP;
+  _readyP = (async () => {
+    if (usePglite) {
+      const { PGlite } = await import('@electric-sql/pglite');
+      _client = new PGlite();
+      const schema = fs.readFileSync(path.join(__dirname, 'schema.postgres.sql'), 'utf8');
+      await _client.exec(schema);
+    } else {
+      const { Pool } = require('pg');
+      _client = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: Number(process.env.PG_MAX || 3),
+        ssl: { rejectUnauthorized: false }, // Supabase ต้องใช้ SSL
+      });
+    }
+  })();
+  return _readyP;
+}
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+async function query(text, params = []) {
+  await ready();
+  const res = await _client.query(text, params);
+  return res.rows;
+}
+async function one(text, params = []) {
+  return (await query(text, params))[0];
+}
 
-// รัน schema (idempotent) ทุกครั้งที่เริ่มแอป
-const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-db.exec(schema);
+function clientFor(c) {
+  return {
+    query: async (t, p = []) => (await c.query(t, p)).rows,
+    one: async (t, p = []) => (await c.query(t, p)).rows[0],
+  };
+}
 
-module.exports = db;
+// รัน callback ภายใน transaction (BEGIN/COMMIT/ROLLBACK)
+async function tx(fn) {
+  await ready();
+  if (usePglite) {
+    await _client.query('BEGIN');
+    try {
+      const r = await fn(clientFor(_client));
+      await _client.query('COMMIT');
+      return r;
+    } catch (e) {
+      await _client.query('ROLLBACK');
+      throw e;
+    }
+  }
+  const conn = await _client.connect();
+  try {
+    await conn.query('BEGIN');
+    const r = await fn(clientFor(conn));
+    await conn.query('COMMIT');
+    return r;
+  } catch (e) {
+    await conn.query('ROLLBACK');
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { query, one, tx, ready };

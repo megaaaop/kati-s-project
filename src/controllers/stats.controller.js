@@ -1,11 +1,11 @@
-// สถิติการลา (เฟส 5) — รวมยอดตามขอบเขตของผู้ใช้
+// สถิติการลา (เฟส 5) — Phase 6 async
 const userModel = require('../models/user.model');
 const requestModel = require('../models/request.model');
 
-function getStats(req, res, next) {
+async function getStats(req, res, next) {
   try {
-    const user = userModel.findById(req.user.id);
-    const rows = requestModel.statsRows(user);
+    const user = await userModel.findById(req.user.id);
+    const rows = await requestModel.statsRows(user);
 
     const byStatus = { pending: 0, approved: 0, rejected: 0 };
     const byType = { sick: 0, personal: 0, activity: 0 };
@@ -16,7 +16,7 @@ function getStats(req, res, next) {
     for (const r of rows) {
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
       byType[r.leave_type] = (byType[r.leave_type] || 0) + 1;
-      const m = (r.created_at || '').slice(0, 7); // YYYY-MM
+      const m = (r.created_at || '').slice(0, 7);
       if (m) byMonth[m] = (byMonth[m] || 0) + 1;
       const g = r.grade_level || 'ไม่ระบุ';
       byGrade[g] = (byGrade[g] || 0) + 1;

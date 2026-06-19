@@ -1,11 +1,10 @@
-// Middleware ตรวจ token (JWT) และตรวจสิทธิ์ตามบทบาท (spec §7)
+// Middleware ตรวจ token (JWT) และตรวจสิทธิ์ตามบทบาท (Phase 6 — async, โหลด user สดจาก DB)
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// ตรวจว่ามี token ที่ถูกต้องใน header: Authorization: Bearer <token>
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
   if (!token) {
@@ -13,8 +12,8 @@ function verifyToken(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET); // { id, role, full_name }
-    // โหลดผู้ใช้สดจาก DB: ถ้าถูกลบ → token ใช้ไม่ได้; ใช้ role ปัจจุบัน (กันสิทธิ์ค้างหลังถูกปรับบทบาท)
-    const user = userModel.findById(payload.id);
+    // โหลด user สด: ถูกลบ → token ใช้ไม่ได้; ใช้ role ปัจจุบัน (กันสิทธิ์ค้างหลังถูกปรับบทบาท)
+    const user = await userModel.findById(payload.id);
     if (!user) {
       return res.status(401).json({ error: 'บัญชีนี้ไม่มีอยู่แล้ว' });
     }
@@ -25,7 +24,6 @@ function verifyToken(req, res, next) {
   }
 }
 
-// อนุญาตเฉพาะบทบาทที่ระบุ เช่น requireRole('homeroom','gradehead')
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {

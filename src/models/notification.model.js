@@ -1,31 +1,32 @@
-// คิวรีการแจ้งเตือนในเว็บ (F6)
+// คิวรีการแจ้งเตือน (Phase 6 — Postgres, async)
 const db = require('../db');
 
-function create({ user_id, request_id, message }) {
-  const info = db.prepare(`
+async function create({ user_id, request_id, message }) {
+  const row = await db.one(`
     INSERT INTO notifications (user_id, request_id, message)
-    VALUES (@user_id, @request_id, @message)
-  `).run({ user_id, request_id: request_id || null, message });
-  return info.lastInsertRowid;
+    VALUES ($1,$2,$3) RETURNING id
+  `, [user_id, request_id || null, message]);
+  return row.id;
 }
 
 function listForUser(userId, limit = 30) {
-  return db.prepare(
-    'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ?'
-  ).all(userId, limit);
+  return db.query(`
+    SELECT id, user_id, request_id, message, is_read,
+           to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at
+    FROM notifications WHERE user_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2
+  `, [userId, limit]);
 }
 
-function unreadCount(userId) {
-  return db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0').get(userId).n;
+async function unreadCount(userId) {
+  const row = await db.one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = $1 AND is_read = false', [userId]);
+  return Number(row.n);
 }
 
-// ทำเครื่องหมายอ่านแล้ว เฉพาะของเจ้าของ
 function markRead(id, userId) {
-  return db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(id, userId);
+  return db.query('UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2', [id, userId]);
 }
-
 function markAllRead(userId) {
-  return db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(userId);
+  return db.query('UPDATE notifications SET is_read = true WHERE user_id = $1', [userId]);
 }
 
 module.exports = { create, listForUser, unreadCount, markRead, markAllRead };

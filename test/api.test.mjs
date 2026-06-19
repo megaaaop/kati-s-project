@@ -2,15 +2,11 @@
 // รัน: npm test  (สตาร์ทแอปบนพอร์ตสุ่ม + ใช้ DB ชั่วคราว)
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 
-process.env.NODE_ENV = 'test'; // ปิด rate limiter ระหว่างเทสต์
+// ไม่ตั้ง DATABASE_URL → db.js ใช้ pglite (Postgres in-memory); NODE_ENV=test → memory storage + ปิด rate limiter
+process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-xyz';
 process.env.STAFF_SIGNUP_CODE = 'test-code';
-const TMP_DB = path.join(os.tmpdir(), 'absence-test-' + process.pid + '.db');
-process.env.DB_PATH = TMP_DB;
 const CODE = 'test-code';
 
 let server, base;
@@ -23,9 +19,6 @@ before(async () => {
 
 after(() => {
   if (server) server.close();
-  for (const f of [TMP_DB, TMP_DB + '-wal', TMP_DB + '-shm']) {
-    try { fs.rmSync(f, { force: true }); } catch { /* ignore */ }
-  }
 });
 
 async function j(p, { method = 'GET', token, body } = {}) {

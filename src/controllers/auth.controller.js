@@ -1,4 +1,4 @@
-// ตรรกะระบบสมาชิก/ล็อกอิน (F1)
+// ตรรกะระบบสมาชิก/ล็อกอิน (F1) — Phase 6 async
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
@@ -18,33 +18,27 @@ async function register(req, res, next) {
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: 'บทบาทไม่ถูกต้อง' });
     }
-    // สมัครเป็นบทบาทพิเศษ (ครู/ผู้บริหาร/แอดมิน) ต้องมีรหัสลับที่ตรงกับ .env
     if (STAFF_ROLES.includes(role)) {
       if (!process.env.STAFF_SIGNUP_CODE || staff_code !== process.env.STAFF_SIGNUP_CODE) {
         return res.status(403).json({ error: 'รหัสลับสำหรับครู/ผู้บริหารไม่ถูกต้อง' });
       }
     }
-    // แอดมิน: สมัครเองได้เฉพาะ "คนแรก" ตอนระบบยังไม่มีแอดมิน (bootstrap) จากนั้นล็อก
-    // ให้แอดมินสร้างแอดมินคนอื่นผ่านหน้าจัดการผู้ใช้แทน
-    if (role === 'admin' && userModel.findByRole('admin').length > 0) {
+    // แอดมิน: สมัครเองได้เฉพาะ "คนแรก" ตอนยังไม่มีแอดมิน จากนั้นล็อก
+    if (role === 'admin' && (await userModel.findByRole('admin')).length > 0) {
       return res.status(403).json({ error: 'มีผู้ดูแลระบบอยู่แล้ว — ให้แอดมินสร้างบัญชีให้ผ่านหน้าจัดการผู้ใช้' });
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' });
     }
-    if (userModel.findByEmail(email)) {
+    if (await userModel.findByEmail(email)) {
       return res.status(409).json({ error: 'อีเมลนี้ถูกใช้ไปแล้ว' });
     }
 
     const password_hash = await bcrypt.hash(String(password), 10);
-    const user = userModel.createUser({
-      full_name,
-      email,
-      password_hash,
-      role,
+    const user = await userModel.createUser({
+      full_name, email, password_hash, role,
       student_id: role === 'student' ? student_id : null,
       class_room: role === 'student' ? class_room : null,
-      // นักเรียน: ระดับชั้นจากห้อง; ผู้อนุมัติที่จับคิวตามระดับชั้น: ระดับที่ดูแลตามที่กรอก
       grade_level: role === 'student' ? deriveGrade(class_room)
         : (GRADE_ROLES.includes(role) ? (grade_level || null) : null),
     });
@@ -61,7 +55,7 @@ async function login(req, res, next) {
     if (!email || !password) {
       return res.status(400).json({ error: 'กรอกอีเมลและรหัสผ่าน' });
     }
-    const user = userModel.findByEmail(email);
+    const user = await userModel.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
     }
@@ -71,8 +65,7 @@ async function login(req, res, next) {
     }
     const token = jwt.sign(
       { id: user.id, role: user.role, full_name: user.full_name },
-      JWT_SECRET,
-      { expiresIn: TOKEN_TTL }
+      JWT_SECRET, { expiresIn: TOKEN_TTL }
     );
     return res.json({ token, user: publicUser(user) });
   } catch (e) {
@@ -84,12 +77,14 @@ function logout(req, res) {
   return res.json({ ok: true });
 }
 
-function me(req, res) {
-  const user = userModel.findById(req.user.id);
-  if (!user) {
-    return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+async function me(req, res, next) {
+  try {
+    const user = await userModel.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+    return res.json({ user: publicUser(user) });
+  } catch (e) {
+    next(e);
   }
-  return res.json({ user: publicUser(user) });
 }
 
 module.exports = { register, login, logout, me };
