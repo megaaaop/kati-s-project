@@ -9,7 +9,8 @@ const TOKEN_TTL = '8h';
 
 async function register(req, res, next) {
   try {
-    const { full_name, email, password, role, student_id, class_room, grade_level, staff_code } = req.body || {};
+    const { full_name, password, role, student_id, class_room, grade_level, staff_code } = req.body || {};
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
 
     if (!full_name || !email || !password || !role) {
       return res.status(400).json({ error: 'กรอกชื่อ-นามสกุล อีเมล รหัสผ่าน และบทบาทให้ครบ' });
@@ -22,6 +23,11 @@ async function register(req, res, next) {
       if (!process.env.STAFF_SIGNUP_CODE || staff_code !== process.env.STAFF_SIGNUP_CODE) {
         return res.status(403).json({ error: 'รหัสลับสำหรับครู/ผู้บริหารไม่ถูกต้อง' });
       }
+    }
+    // แอดมิน: สมัครเองได้เฉพาะ "คนแรก" ตอนระบบยังไม่มีแอดมิน (bootstrap) จากนั้นล็อก
+    // ให้แอดมินสร้างแอดมินคนอื่นผ่านหน้าจัดการผู้ใช้แทน
+    if (role === 'admin' && userModel.findByRole('admin').length > 0) {
+      return res.status(403).json({ error: 'มีผู้ดูแลระบบอยู่แล้ว — ให้แอดมินสร้างบัญชีให้ผ่านหน้าจัดการผู้ใช้' });
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' });
@@ -50,7 +56,8 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body || {};
+    const { password } = req.body || {};
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     if (!email || !password) {
       return res.status(400).json({ error: 'กรอกอีเมลและรหัสผ่าน' });
     }

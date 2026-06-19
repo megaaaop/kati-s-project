@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+process.env.NODE_ENV = 'test'; // ปิด rate limiter ระหว่างเทสต์
 process.env.JWT_SECRET = 'test-secret-xyz';
 process.env.STAFF_SIGNUP_CODE = 'test-code';
 const TMP_DB = path.join(os.tmpdir(), 'absence-test-' + process.pid + '.db');
@@ -168,4 +169,24 @@ test('CSV export: 200, text/csv, BOM + Thai header', async () => {
   const buf = new Uint8Array(await r.arrayBuffer());
   assert.deepEqual([buf[0], buf[1], buf[2]], [0xEF, 0xBB, 0xBF]); // UTF-8 BOM ให้ Excel อ่านไทยถูก
   assert.match(new TextDecoder('utf-8').decode(buf), /นักเรียน/);
+});
+
+test('admin self-register locked after first admin exists (bootstrap-only)', async () => {
+  const r = await reg({ full_name: 'แอดมิน2', email: 'admin2@t.com', password: 'pass123', role: 'admin', staff_code: CODE });
+  assert.equal(r.status, 403);
+});
+
+test('email normalized: case-insensitive login + duplicate guard', async () => {
+  assert.equal((await reg({ full_name: 'มิกซ์', email: 'Mixed.Case@X.com', password: 'pass123', role: 'parent' })).status, 201);
+  assert.equal((await j('/api/auth/login', { method: 'POST', body: { email: 'mixed.case@x.com', password: 'pass123' } })).status, 200);
+  assert.equal((await reg({ full_name: 'x', email: 'MIXED.CASE@X.COM', password: 'pass123', role: 'parent' })).status, 409);
+});
+
+test('deleted user token is rejected (verifyToken reloads user)', async () => {
+  assert.equal((await reg({ full_name: 'ลบทิ้ง', email: 'gone@t.com', password: 'pass123', role: 'parent' })).status, 201);
+  const gt = await login('gone@t.com');
+  assert.equal((await j('/api/auth/me', { token: gt })).status, 200);
+  const gone = (await j('/api/users', { token: tok.adm })).d.users.find((u) => u.email === 'gone@t.com');
+  assert.equal((await j('/api/users/' + gone.id, { method: 'DELETE', token: tok.adm })).status, 200);
+  assert.equal((await j('/api/auth/me', { token: gt })).status, 401); // token เดิมใช้ไม่ได้แล้ว
 });

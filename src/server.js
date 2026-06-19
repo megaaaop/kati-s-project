@@ -7,6 +7,10 @@ if (!process.env.JWT_SECRET) {
   console.error('❌ ไม่พบ JWT_SECRET ใน .env — คัดลอก .env.example เป็น .env แล้วใส่ค่าก่อน');
   process.exit(1);
 }
+if (!process.env.STAFF_SIGNUP_CODE) {
+  console.error('❌ ไม่พบ STAFF_SIGNUP_CODE — ต้องตั้งรหัสลับสำหรับครู/ผู้บริหารก่อน (ดู .env.example)');
+  process.exit(1);
+}
 
 const authRoutes = require('./routes/auth.routes');
 const requestRoutes = require('./routes/requests.routes');

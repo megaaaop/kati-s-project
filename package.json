@@ -10,6 +10,9 @@
     "test": "node --test"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",

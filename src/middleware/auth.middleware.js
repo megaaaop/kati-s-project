@@ -1,5 +1,6 @@
 // Middleware ตรวจ token (JWT) และตรวจสิทธิ์ตามบทบาท (spec §7)
 const jwt = require('jsonwebtoken');
+const userModel = require('../models/user.model');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -11,7 +12,13 @@ function verifyToken(req, res, next) {
     return res.status(401).json({ error: 'ต้องล็อกอินก่อนใช้งาน' });
   }
   try {
-    req.user = jwt.verify(token, JWT_SECRET); // { id, role, full_name }
+    const payload = jwt.verify(token, JWT_SECRET); // { id, role, full_name }
+    // โหลดผู้ใช้สดจาก DB: ถ้าถูกลบ → token ใช้ไม่ได้; ใช้ role ปัจจุบัน (กันสิทธิ์ค้างหลังถูกปรับบทบาท)
+    const user = userModel.findById(payload.id);
+    if (!user) {
+      return res.status(401).json({ error: 'บัญชีนี้ไม่มีอยู่แล้ว' });
+    }
+    req.user = { id: user.id, role: user.role, full_name: user.full_name };
     next();
   } catch (e) {
     return res.status(401).json({ error: 'token ไม่ถูกต้องหรือหมดอายุ' });
