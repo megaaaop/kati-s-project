@@ -12,7 +12,7 @@ async function createAttachment({ request_id, file_name, file_path }) {
 function listForRequest(request_id) {
   return db.query(`
     SELECT id, request_id, file_name, file_path,
-           to_char(uploaded_at,'YYYY-MM-DD HH24:MI:SS') AS uploaded_at
+           to_char(uploaded_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS uploaded_at
     FROM attachments WHERE request_id = $1 ORDER BY uploaded_at
   `, [request_id]);
 }

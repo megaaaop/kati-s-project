@@ -38,7 +38,7 @@ function findByRole(role) {
 function listUsers() {
   return db.query(`
     SELECT u.id, u.full_name, u.email, u.role, u.student_id, u.class_room, u.grade_level,
-           u.advisor_id, u.parent_id, to_char(u.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
+           u.advisor_id, u.parent_id, to_char(u.created_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS created_at,
            a.full_name AS advisor_name, p.full_name AS parent_name
     FROM users u
     LEFT JOIN users a ON a.id = u.advisor_id

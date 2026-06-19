@@ -43,6 +43,11 @@
 - เช็ก `URL/api/health` → `{"ok":true}`
 - ข้อมูล/ไฟล์อยู่ถาวรใน Supabase แล้ว (ไม่หายตอน redeploy) ✓
 
+## ข้อควรรู้ด้านความปลอดภัย/ปฏิบัติการ
+- **ต้องตั้ง env ให้ครบ** — ถ้าขาด `JWT_SECRET`/`STAFF_SIGNUP_CODE`/`DATABASE_URL` แอปจะ throw ตอนเริ่ม (ทุก route ขึ้น 500) ดู log ของ Vercel จะเห็นสาเหตุชัด (จงใจให้ fail เร็ว ไม่แอบรันด้วยข้อมูลชั่วคราว)
+- **Rate limiter เป็นแบบ in-memory ต่อ instance** — บน Vercel ที่มีหลาย instance การจำกัด login/register จะเป็น "best-effort" (กันได้ระดับหนึ่ง ไม่เป๊ะข้าม instance) เพราะรหัสผ่านยัง hash ด้วย bcrypt อยู่แล้ว ถ้าต้องการเข้มกว่านี้ค่อยย้าย limiter ไปเก็บใน Postgres/Redis
+- **TLS ฐานข้อมูล** — ค่าเริ่มต้นเข้ารหัสการเชื่อมต่อแต่ไม่ตรวจใบรับรอง (ใช้ได้กับ Supabase ทันที) ถ้าต้องการตรวจ cert เต็มรูปแบบ ตั้ง `PG_CA_CERT` เป็นเนื้อหา CA ของ Supabase (Project Settings → Database → SSL)
+
 ## รัน/ทดสอบในเครื่อง
 - `npm run dev` (ไม่มี DATABASE_URL → pglite in-memory, รีสตาร์ตแล้วข้อมูลหาย — เหมาะลองเล่น)
 - `npm test` → 17 เทสต์ (รันบน pglite อัตโนมัติ)

@@ -5,6 +5,11 @@ const fs = require('fs');
 
 // ใช้ pglite เมื่อ: โหมดทดสอบ หรือ ไม่ได้ตั้ง DATABASE_URL (dev). prod ตั้ง DATABASE_URL → ใช้ Postgres จริง
 const usePglite = process.env.NODE_ENV === 'test' || !process.env.DATABASE_URL;
+
+// กันพลาด: production ต้องมี DATABASE_URL เสมอ ไม่งั้นจะแอบใช้ in-memory แล้วข้อมูลหาย
+if (usePglite && process.env.NODE_ENV === 'production') {
+  throw new Error('❌ ต้องตั้ง DATABASE_URL ในโหมด production (ไม่งั้นข้อมูลจะไม่ถูกบันทึกถาวร)');
+}
 let _client = null;
 let _readyP = null;
 
@@ -18,10 +23,14 @@ function ready() {
       await _client.exec(schema);
     } else {
       const { Pool } = require('pg');
+      // ถ้ามี PG_CA_CERT → ตรวจใบรับรองเต็มรูปแบบ (ปลอดภัยกว่า); ไม่งั้นเข้ารหัสแต่ไม่ตรวจ cert (ใช้ได้กับ Supabase ทันที)
+      const ssl = process.env.PG_CA_CERT
+        ? { ca: process.env.PG_CA_CERT, rejectUnauthorized: true }
+        : { rejectUnauthorized: false };
       _client = new Pool({
         connectionString: process.env.DATABASE_URL,
         max: Number(process.env.PG_MAX || 3),
-        ssl: { rejectUnauthorized: false }, // Supabase ต้องใช้ SSL
+        ssl,
       });
     }
   })();

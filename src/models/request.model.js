@@ -7,7 +7,7 @@ const LR = `lr.id, lr.student_id, lr.leave_type,
   to_char(lr.start_date,'YYYY-MM-DD') AS start_date,
   to_char(lr.end_date,'YYYY-MM-DD') AS end_date,
   lr.reason, lr.status, lr.current_level,
-  to_char(lr.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at`;
+  to_char(lr.created_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS created_at`;
 
 async function createRequest({ student_id, leave_type, start_date, end_date, reason }) {
   const row = await db.one(`
@@ -107,7 +107,7 @@ function recordDecision({ request, approver, decision, note }) {
 function stepsForRequest(requestId) {
   return db.query(`
     SELECT st.level, st.role, st.decision, st.note,
-           to_char(st.decided_at,'YYYY-MM-DD HH24:MI:SS') AS decided_at,
+           to_char(st.decided_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS decided_at,
            u.full_name AS approver_name
     FROM approval_steps st LEFT JOIN users u ON u.id = st.approver_id
     WHERE st.request_id = $1 ORDER BY st.id
@@ -117,7 +117,7 @@ function stepsForRequest(requestId) {
 // แถวสำหรับสถิติ ตามขอบเขตผู้ใช้
 function statsRows(user) {
   const cols = `lr.id, lr.leave_type, lr.status, lr.current_level,
-    to_char(lr.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
+    to_char(lr.created_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS created_at,
     s.full_name AS student_name, s.student_id AS student_code, s.grade_level, s.class_room`;
   const FROM = `FROM leave_requests lr JOIN users s ON s.id = lr.student_id`;
   if (user.role === 'admin' || user.grade_level === GRADE_ALL) {

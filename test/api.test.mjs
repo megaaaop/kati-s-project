@@ -183,3 +183,12 @@ test('deleted user token is rejected (verifyToken reloads user)', async () => {
   assert.equal((await j('/api/users/' + gone.id, { method: 'DELETE', token: tok.adm })).status, 200);
   assert.equal((await j('/api/auth/me', { token: gt })).status, 401); // token เดิมใช้ไม่ได้แล้ว
 });
+
+// lock การแก้ timezone: to_char ต้องเรนเดอร์เป็นเวลาไทยแม้ session เป็น UTC (เหมือน Supabase)
+test('timestamps render in Asia/Bangkok regardless of session TZ', async () => {
+  const dbMod = await import('../src/db.js');
+  const db = dbMod.default || dbMod;
+  await db.query("SET TIME ZONE 'UTC'");
+  const rows = await db.query("SELECT to_char(TIMESTAMPTZ '2026-06-30 19:00:00+00' AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD') AS d");
+  assert.equal(rows[0].d, '2026-07-01'); // 19:00 UTC = 02:00 ของวันถัดไป (ไทย)
+});

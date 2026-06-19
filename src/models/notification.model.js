@@ -12,7 +12,7 @@ async function create({ user_id, request_id, message }) {
 function listForUser(userId, limit = 30) {
   return db.query(`
     SELECT id, user_id, request_id, message, is_read,
-           to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at
+           to_char(created_at AT TIME ZONE 'Asia/Bangkok','YYYY-MM-DD HH24:MI:SS') AS created_at
     FROM notifications WHERE user_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2
   `, [userId, limit]);
 }

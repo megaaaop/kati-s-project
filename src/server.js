@@ -3,13 +3,14 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 
+// fail-fast เมื่อ env จำเป็นไม่ครบ — throw เพื่อให้ขึ้น log ชัดทั้งตอนรันในเครื่องและบน serverless
 if (!process.env.JWT_SECRET) {
-  console.error('❌ ไม่พบ JWT_SECRET ใน .env — คัดลอก .env.example เป็น .env แล้วใส่ค่าก่อน');
-  process.exit(1);
+  console.error('❌ ไม่พบ JWT_SECRET — คัดลอก .env.example เป็น .env แล้วใส่ค่าก่อน');
+  throw new Error('JWT_SECRET is required');
 }
 if (!process.env.STAFF_SIGNUP_CODE) {
   console.error('❌ ไม่พบ STAFF_SIGNUP_CODE — ต้องตั้งรหัสลับสำหรับครู/ผู้บริหารก่อน (ดู .env.example)');
-  process.exit(1);
+  throw new Error('STAFF_SIGNUP_CODE is required');
 }
 
 const authRoutes = require('./routes/auth.routes');
