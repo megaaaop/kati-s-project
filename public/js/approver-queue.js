@@ -12,6 +12,10 @@ async function load() {
   try {
     const { requests } = await apiFetch('/api/requests');
     all = requests;
+    const pending = all.filter((r) => r.in_queue === 1).length;
+    const badge = document.getElementById('qcount');
+    if (pending > 0) { badge.textContent = pending; badge.classList.remove('d-none'); }
+    else { badge.classList.add('d-none'); }
     render('queue');
   } catch (e) {
     document.getElementById('list').innerHTML = '<div class="alert alert-danger">' + escapeHtml(e.message) + '</div>';

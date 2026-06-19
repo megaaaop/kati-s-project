@@ -1,0 +1,29 @@
+# Render Blueprint — deploy ด้วยการเชื่อม GitHub repo แล้ว Render อ่านไฟล์นี้
+# หมายเหตุ: persistent disk ต้องใช้ instance แบบเสียเงิน (free tier เก็บข้อมูลไม่ถาวร)
+services:
+  - type: web
+    name: absence-system
+    runtime: node
+    region: singapore
+    plan: starter            # ต้องไม่ใช่ free ถ้าต้องการ disk ถาวร
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true        # Render สุ่มให้
+      - key: STAFF_SIGNUP_CODE
+        sync: false                # ใส่เองในหน้า dashboard
+      - key: DB_PATH
+        value: /var/data/absence.db
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      # (ทางเลือก) อีเมลจริง — ใส่ค่าเองในหน้า dashboard
+      # - key: SMTP_HOST
+      #   sync: false
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,9 +1,12 @@
 // รับไฟล์แนบหลักฐาน (F3) ด้วย Multer — จำกัดชนิด/ขนาด และตั้งชื่อไฟล์แบบสุ่ม
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+// ที่เก็บไฟล์แนบ ตั้งได้ผ่าน env (ชี้ไป persistent disk ตอน deploy)
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // ชนิดไฟล์ที่อนุญาต → นามสกุลที่จะใช้เก็บ (ไม่เชื่อชื่อไฟล์เดิมจากผู้ใช้)
 const MIME_EXT = {

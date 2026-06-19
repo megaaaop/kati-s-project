@@ -1,12 +1,13 @@
 {
   "name": "absence-system",
   "version": "1.0.0",
-  "description": "ระบบยื่นเอกสารลา/ขาดเรียนออนไลน์ (MVP Phase 0-1)",
+  "description": "ระบบยื่นเอกสารลา/ขาดเรียนออนไลน์ (สายอนุมัติหลายขั้น)",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
   },
   "license": "MIT",
   "dependencies": {
