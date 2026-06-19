@@ -9,45 +9,24 @@
   <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg brand-gradient navbar-dark">
-    <div class="container">
-      <a class="navbar-brand" href="/student/dashboard.html">📋 ระบบยื่นใบลา</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="nav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link" href="/student/dashboard.html">หน้าหลัก</a></li>
-          <li class="nav-item"><a class="nav-link" href="/student/request-new.html">ยื่นใบลา</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/student/my-requests.html">คำขอของฉัน</a></li>
-        </ul>
-        <span class="navbar-text text-white me-3">👤 <span id="userName"></span></span>
-        <button class="btn btn-light btn-sm" onclick="logout()">ออกจากระบบ</button>
-      </div>
-    </div>
-  </nav>
-
+  <div id="appnav"></div>
   <div class="page-wrap">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0">📂 คำขอของฉัน</h2>
       <a href="/student/request-new.html" class="btn btn-brand btn-sm">+ ยื่นใบลาใหม่</a>
     </div>
-
-    <div id="createdAlert" class="alert alert-success d-none" role="alert">✅ ส่งคำขอเรียบร้อยแล้ว รอครูพิจารณา</div>
-
-    <div id="empty" class="card d-none">
-      <div class="card-body text-center py-5 muted">
-        ยังไม่มีคำขอลา — <a href="/student/request-new.html">เริ่มยื่นใบลาแรก</a>
-      </div>
-    </div>
-
+    <div id="createdAlert" class="alert alert-success d-none" role="alert">✅ ส่งคำขอเรียบร้อยแล้ว เข้าสู่สายอนุมัติ</div>
+    <div id="empty" class="card d-none"><div class="card-body text-center py-5 muted">
+      ยังไม่มีคำขอลา — <a href="/student/request-new.html">เริ่มยื่นใบลาแรก</a>
+    </div></div>
     <div id="list"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/js/api.js"></script>
-  <script src="/js/auth.js"></script>
   <script src="/js/display.js"></script>
+  <script src="/js/shell.js"></script>
+  <script src="/js/auth.js"></script>
   <script src="/js/my-requests.js"></script>
 </body>
 </html>

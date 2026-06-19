@@ -33,16 +33,28 @@
           <label class="form-label">บทบาท</label>
           <select id="role" name="role" class="form-select" required>
             <option value="student">นักเรียน</option>
-            <option value="teacher">ครู / ที่ปรึกษา</option>
-            <option value="admin">ผู้ดูแลระบบ</option>
             <option value="parent">ผู้ปกครอง</option>
+            <option value="homeroom">ครูประจำชั้น</option>
+            <option value="gradehead">ครูหัวหน้าระดับ</option>
+            <option value="dormhead">หัวหน้าฝ่ายหอพัก</option>
+            <option value="deputy">รองผอ</option>
+            <option value="principal">ผอ</option>
+            <option value="admin">ผู้ดูแลระบบ</option>
           </select>
-          <div class="form-text">นักเรียน/ผู้ปกครองสมัครได้เลย — ครู/แอดมินต้องใช้รหัสลับ</div>
+          <div class="form-text">นักเรียน/ผู้ปกครองสมัครได้เลย — ครู/ผู้บริหาร/แอดมินต้องใช้รหัสลับ</div>
+        </div>
+
+        <div id="gradeField" style="display:none">
+          <div class="mb-3">
+            <label class="form-label">ระดับชั้นที่ดูแล</label>
+            <input type="text" name="grade_level" class="form-control" placeholder="เช่น ม.5 หรือ ทุกระดับ">
+            <div class="form-text">หัวหน้าระดับใส่ระดับชั้นที่รับผิดชอบ · รองผอ/ผอ ใส่ "ทุกระดับ" ได้</div>
+          </div>
         </div>
 
         <div id="staffFields" style="display:none">
           <div class="mb-3">
-            <label class="form-label">รหัสลับสำหรับครู/แอดมิน</label>
+            <label class="form-label">รหัสลับสำหรับครู/ผู้บริหาร</label>
             <input type="password" name="staff_code" class="form-control" autocomplete="off">
             <div class="form-text">ขอรหัสนี้จากผู้ดูแลระบบ</div>
           </div>

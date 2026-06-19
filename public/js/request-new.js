@@ -6,7 +6,7 @@ let currentUser = null;
 })();
 
 function initPage() {
-  document.getElementById('userName').textContent = currentUser.full_name;
+  renderNav(currentUser, 'new');
 
   const form = document.getElementById('requestForm');
   const errBox = document.getElementById('error');

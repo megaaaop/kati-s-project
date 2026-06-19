@@ -18,7 +18,7 @@ function verifyToken(req, res, next) {
   }
 }
 
-// อนุญาตเฉพาะบทบาทที่ระบุ เช่น requireRole('teacher','admin')
+// อนุญาตเฉพาะบทบาทที่ระบุ เช่น requireRole('homeroom','gradehead')
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {

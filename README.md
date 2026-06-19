@@ -1,69 +1,48 @@
 # ระบบยื่นเอกสารลา / ขาดเรียนออนไลน์
 
-เว็บไซต์ให้นักเรียนยื่นใบลาแบบดิจิทัล ครูอนุมัติออนไลน์ ติดตามสถานะได้
-(อ้างอิงสเปก: `../absence-system-spec.md`)
+เว็บไซต์ให้นักเรียนยื่นใบลาแบบดิจิทัล อนุมัติออนไลน์ตามสายงาน และติดตามสถานะได้
+(อ้างอิงสเปก: `../absence-system-spec.md` — ดู §13 สำหรับสายอนุมัติหลายขั้น)
 
-## สถานะตอนนี้ — Phase 0 + 1 + 2 ✅
+## สถานะตอนนี้ — Phase 0–3 ✅
 
-- **Phase 0** วางโครง Node/Express + SQLite (สร้างตารางครบ 4 ตาราง) + Git
-- **Phase 1**
-  - **F1** สมัคร/ล็อกอินแยกบทบาท — bcrypt + JWT, กันคนไม่ล็อกอิน, ตรวจสิทธิ์ตาม role
-  - **F2** ฟอร์มยื่นใบลา — บันทึกลง DB จริง สถานะเริ่มต้น `pending`
-- **Phase 2**
-  - **F5** ครูอนุมัติ/ปฏิเสธ — รายการคำขอ + หน้ารายละเอียด + ใส่หมายเหตุ, บันทึกผู้รีวิว/เวลา, พิจารณาซ้ำไม่ได้
-  - **F3** แนบไฟล์หลักฐาน — JPG/PNG/PDF ≤ 5MB, ตรวจไบต์จริง (ไม่เชื่อนามสกุล), เปิดดูได้เฉพาะเจ้าของ/ครู
-  - **F4** ติดตามสถานะ — หน้ารายละเอียดฝั่งนักเรียน เห็นสถานะ + หมายเหตุครู + ประวัติ
+- **Phase 0–1** โครง Node/Express + SQLite, ล็อกอินแยกบทบาท (bcrypt+JWT), ฟอร์มยื่นใบลา
+- **Phase 2** แนบไฟล์หลักฐาน (ตรวจไบต์จริง), ติดตามสถานะ
+- **Phase 3 — สายอนุมัติหลายขั้น (โรงเรียนหอพัก)**
+  - **สายอนุมัติ 5 ขั้น:** ครูประจำชั้น → ครูหัวหน้าระดับ → หัวหน้าฝ่ายหอพัก → รองผอ → ผอ
+    (ปฏิเสธขั้นใดก็จบ, แยกคิวตามระดับชั้น, นิยามสายที่ `src/config/approval.js`)
+  - **แจ้งเตือน (F6)** กระดิ่งในเว็บ + อีเมลจำลอง (log console ผ่าน Nodemailer, ต่อ SMTP ได้)
+  - **ผู้ปกครอง** ดูการลาของบุตรหลาน + รับแจ้งเตือน (ดูอย่างเดียว)
+  - **แอดมิน** จัดการผู้ใช้ + จับคู่ครูประจำชั้น/ผู้ปกครอง/ระดับชั้น
 
-> เฟสถัดไป: แจ้งเตือนในเว็บ/อีเมล (F6) + บทบาทผู้ปกครอง + **หน้าแอดมินจัดการผู้ใช้** (เฟส 3) · ทดสอบรวม + deploy (เฟส 4)
+> เฟสถัดไป: ทดสอบรวม + ปรับดีไซน์ + Deploy (เฟส 4)
+
+## บทบาท (roles)
+`student` · `parent` · `homeroom` (ครูประจำชั้น) · `gradehead` (ครูหัวหน้าระดับ) · `dormhead` (หัวหน้าฝ่ายหอพัก) · `deputy` (รองผอ) · `principal` (ผอ) · `admin`
 
 ## วิธีติดตั้งและรัน
 
 ```bash
 cd absence-system
 npm install
-cp .env.example .env          # แล้วใส่ค่า JWT_SECRET และ STAFF_SIGNUP_CODE
-npm run dev                   # หรือ npm start
+cp .env.example .env          # ใส่ JWT_SECRET และ STAFF_SIGNUP_CODE
+npm run dev                   # หรือ npm start  → http://localhost:3000
 ```
+สร้างค่าสุ่ม: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
 
-สร้างค่าสุ่มสำหรับ `.env`:
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"   # JWT_SECRET
-node -e "console.log(require('crypto').randomBytes(6).toString('hex'))"    # STAFF_SIGNUP_CODE
-```
+### การสมัคร (ชั่วคราวจนกว่าจะมีแอดมินคนแรก)
+- **นักเรียน/ผู้ปกครอง** สมัครได้เลย (นักเรียนกรอกห้อง เช่น `ม.5/2` → ระบบดึงระดับชั้น `ม.5` ให้)
+- **ครู/ผู้บริหาร/แอดมิน** ต้องใช้ **รหัสลับ** (`STAFF_SIGNUP_CODE` ใน `.env`)
+- ผู้อนุมัติขั้น 2–5 ใส่ "ระดับชั้นที่ดูแล" (เช่น `ม.5`) หรือ `ทุกระดับ`
+- จากนั้น **แอดมินจับคู่** นักเรียน ↔ ครูประจำชั้น/ผู้ปกครอง ในหน้าจัดการผู้ใช้
 
-เปิดเบราว์เซอร์: <http://localhost:3000> → สมัครสมาชิก → ใช้งานได้เลย
-
-### การสมัครสมาชิก (ชั่วคราวจนกว่าจะมีหน้าแอดมินในเฟส 3)
-- **นักเรียน / ผู้ปกครอง** สมัครได้เลย
-- **ครู / แอดมิน** ต้องกรอก **รหัสลับ** ที่ตรงกับ `STAFF_SIGNUP_CODE` ใน `.env`
-  (แจกรหัสนี้ให้เฉพาะครู/ผู้ดูแล) — กันไม่ให้ใครก็ได้สมัครเป็นครูแล้วเห็นข้อมูลนักเรียนทุกคน
-
-## โครงสร้างหลัก
-
-```
-src/
-  server.js              จุดเริ่ม Express
-  db.js + schema.sql     เชื่อม SQLite + สร้างตาราง
-  routes/ controllers/ models/ middleware/   (auth, requests, attachments, upload)
-public/                  หน้าเว็บ (Bootstrap 5 + ธีม indigo/slate)
-  student/  teacher/     หน้าจอแยกตามบทบาท
-uploads/                 ไฟล์แนบ (ไม่ commit)
-data/absence.db          ฐานข้อมูล (สร้างอัตโนมัติตอนรัน, ไม่ commit)
-```
-
-## API
+## API หลัก
 
 | Method | Path | สิทธิ์ |
 |---|---|---|
-| POST | `/api/auth/register` | ทุกคน (ครู/แอดมินต้องมี staff_code) |
-| POST | `/api/auth/login` | ทุกคน |
-| GET  | `/api/auth/me` | ต้องล็อกอิน |
-| POST | `/api/requests` | นักเรียน |
-| GET  | `/api/requests` | ต้องล็อกอิน (กรองตาม role) |
-| GET  | `/api/requests/:id` | ต้องล็อกอิน (เจ้าของ/ครู) |
-| PUT  | `/api/requests/:id/approve` | ครู |
-| PUT  | `/api/requests/:id/reject` | ครู (ต้องมีหมายเหตุ) |
-| POST | `/api/requests/:id/attachments` | นักเรียน (เจ้าของ, คำขอ pending) |
-| GET  | `/api/attachments/:id/download` | เจ้าของ/ครู/แอดมิน |
-
-แนบ token ทุก request ที่ต้องล็อกอิน: `Authorization: Bearer <token>`
+| POST | `/api/auth/register` `/login` `/logout` · GET `/me` | — |
+| POST | `/api/requests` | นักเรียน (ต้องมีครูประจำชั้นก่อน) |
+| GET | `/api/requests` · `/api/requests/:id` | กรองตามบทบาท/ขอบเขต |
+| PUT | `/api/requests/:id/decide` `{decision, note}` | ผู้อนุมัติขั้นปัจจุบัน |
+| POST | `/api/requests/:id/attachments` · GET `/api/attachments/:id/download` | นักเรียน / เจ้าของ+ผู้อนุมัติในขอบเขต |
+| GET | `/api/notifications` · PUT `/:id/read` · `/read-all` | ต้องล็อกอิน |
+| GET/POST/PUT/DELETE | `/api/users` | แอดมิน |

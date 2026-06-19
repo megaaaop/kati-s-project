@@ -81,3 +81,23 @@ a { color: var(--brand-dark); }
 
 .page-wrap { max-width: 880px; margin: 0 auto; padding: 28px 18px 60px; }
 .muted { color: var(--muted); }
+
+/* ---- ไทม์ไลน์สายอนุมัติ ---- */
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline .tl { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; position: relative; }
+.timeline .tl:not(:last-child)::after {
+  content: ""; position: absolute; left: 13px; top: 30px; bottom: -2px; width: 2px; background: var(--line);
+}
+.tl-ic {
+  flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; font-weight: 700; background: #f1f5f9; color: var(--muted); z-index: 1;
+}
+.tl-h { font-weight: 600; font-size: 14.5px; }
+.tl-d { font-size: 13px; }
+.tl-ok .tl-ic { background: #dcfce7; color: #15803d; }
+.tl-no .tl-ic { background: #ffe4e6; color: #be123c; }
+.tl-now .tl-ic { background: #fef3c7; color: #b45309; }
+.tl-wait .tl-ic, .tl-skip .tl-ic { background: #f1f5f9; color: #94a3b8; }
+
+/* ตารางแอดมิน */
+.table td, .table th { vertical-align: middle; }

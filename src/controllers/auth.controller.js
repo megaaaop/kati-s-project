@@ -2,29 +2,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
+const { VALID_ROLES, STAFF_ROLES, GRADE_ROLES, publicUser, deriveGrade } = require('../utils/roles');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL = '8h';
-const VALID_ROLES = ['student', 'teacher', 'admin', 'parent'];
-// บทบาทที่มีสิทธิ์พิเศษ ต้องใส่ "รหัสลับ" (STAFF_SIGNUP_CODE) ตอนสมัคร
-// กันไม่ให้ใครก็ได้สมัครเป็นครู/แอดมินเองแล้วเข้าถึงข้อมูลนักเรียนทุกคน
-const STAFF_ROLES = ['teacher', 'admin'];
-
-// ข้อมูลผู้ใช้ที่ส่งกลับไปฝั่ง client (ไม่รวม password_hash)
-function publicUser(u) {
-  return {
-    id: u.id,
-    full_name: u.full_name,
-    email: u.email,
-    role: u.role,
-    student_id: u.student_id,
-    class_room: u.class_room,
-  };
-}
 
 async function register(req, res, next) {
   try {
-    const { full_name, email, password, role, student_id, class_room, staff_code } = req.body || {};
+    const { full_name, email, password, role, student_id, class_room, grade_level, staff_code } = req.body || {};
 
     if (!full_name || !email || !password || !role) {
       return res.status(400).json({ error: 'กรอกชื่อ-นามสกุล อีเมล รหัสผ่าน และบทบาทให้ครบ' });
@@ -32,10 +17,10 @@ async function register(req, res, next) {
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: 'บทบาทไม่ถูกต้อง' });
     }
-    // สมัครเป็นครู/แอดมิน ต้องมีรหัสลับที่ตรงกับค่าใน .env เท่านั้น
+    // สมัครเป็นบทบาทพิเศษ (ครู/ผู้บริหาร/แอดมิน) ต้องมีรหัสลับที่ตรงกับ .env
     if (STAFF_ROLES.includes(role)) {
       if (!process.env.STAFF_SIGNUP_CODE || staff_code !== process.env.STAFF_SIGNUP_CODE) {
-        return res.status(403).json({ error: 'รหัสลับสำหรับครู/แอดมินไม่ถูกต้อง' });
+        return res.status(403).json({ error: 'รหัสลับสำหรับครู/ผู้บริหารไม่ถูกต้อง' });
       }
     }
     if (String(password).length < 6) {
@@ -53,6 +38,9 @@ async function register(req, res, next) {
       role,
       student_id: role === 'student' ? student_id : null,
       class_room: role === 'student' ? class_room : null,
+      // นักเรียน: ระดับชั้นจากห้อง; ผู้อนุมัติที่จับคิวตามระดับชั้น: ระดับที่ดูแลตามที่กรอก
+      grade_level: role === 'student' ? deriveGrade(class_room)
+        : (GRADE_ROLES.includes(role) ? (grade_level || null) : null),
     });
     return res.status(201).json({ user: publicUser(user) });
   } catch (e) {
@@ -85,7 +73,6 @@ async function login(req, res, next) {
   }
 }
 
-// JWT ไม่มี session ฝั่ง server — logout = ลบ token ฝั่ง client (endpoint นี้เป็น no-op)
 function logout(req, res) {
   return res.json({ ok: true });
 }

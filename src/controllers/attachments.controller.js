@@ -3,7 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const requestModel = require('../models/request.model');
 const attachmentModel = require('../models/attachment.model');
+const userModel = require('../models/user.model');
 const { UPLOAD_DIR } = require('../middleware/upload.middleware');
+const { APPROVER_ROLES, levelForRole } = require('../config/approval');
 
 const MAX_ATTACHMENTS = 5; // จำกัดจำนวนไฟล์ต่อคำขอ (กัน disk-fill)
 
@@ -87,12 +89,17 @@ function downloadAttachment(req, res, next) {
     const att = attachmentModel.findById(Number(req.params.id));
     if (!att) return res.status(404).json({ error: 'ไม่พบไฟล์' });
 
-    const request = requestModel.findById(att.request_id);
-    if (!request) return res.status(404).json({ error: 'ไม่พบคำขอ' });
+    const detail = requestModel.findDetailById(att.request_id);
+    if (!detail) return res.status(404).json({ error: 'ไม่พบคำขอ' });
 
-    const isOwner = request.student_id === req.user.id;
-    const isStaff = req.user.role === 'teacher' || req.user.role === 'admin';
-    if (!isOwner && !isStaff) {
+    // ใช้กติกาสิทธิ์เดียวกับการดูรายละเอียดคำขอ: เจ้าของ / ผู้ปกครอง / แอดมิน / ผู้อนุมัติในขอบเขต
+    const viewer = userModel.findById(req.user.id);
+    const isOwner = detail.student_id === viewer.id;
+    const isParent = viewer.role === 'parent' && detail.parent_id === viewer.id;
+    const isAdmin = viewer.role === 'admin';
+    const isApproverInScope = APPROVER_ROLES.includes(viewer.role) &&
+      requestModel.inScope(viewer, { advisor_id: detail.advisor_id, grade_level: detail.grade_level }, levelForRole(viewer.role));
+    if (!isOwner && !isParent && !isAdmin && !isApproverInScope) {
       return res.status(403).json({ error: 'ไม่มีสิทธิ์เปิดไฟล์นี้' });
     }
 

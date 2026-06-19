@@ -18,9 +18,10 @@ async function requireAuth(allowedRoles) {
 
 function redirectByRole(role) {
   if (role === 'student') location.href = '/student/dashboard.html';
-  else if (role === 'teacher') location.href = '/teacher/requests.html';
-  // admin / parent dashboards จะมาในเฟสถัดไป
-  else location.href = '/coming-soon.html';
+  else if (['homeroom', 'gradehead', 'dormhead', 'deputy', 'principal'].includes(role)) location.href = '/approver/queue.html';
+  else if (role === 'parent') location.href = '/parent/children.html';
+  else if (role === 'admin') location.href = '/admin/users.html';
+  else location.href = '/login.html';
 }
 
 function logout() {
