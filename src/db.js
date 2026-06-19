@@ -6,9 +6,9 @@ const fs = require('fs');
 // ใช้ pglite เมื่อ: โหมดทดสอบ หรือ ไม่ได้ตั้ง DATABASE_URL (dev). prod ตั้ง DATABASE_URL → ใช้ Postgres จริง
 const usePglite = process.env.NODE_ENV === 'test' || !process.env.DATABASE_URL;
 
-// กันพลาด: production ต้องมี DATABASE_URL เสมอ ไม่งั้นจะแอบใช้ in-memory แล้วข้อมูลหาย
+// กันพลาด: production ต้องมี DATABASE_URL (ชั่วคราว: log แทน throw เพื่อให้ /api/_diag เข้าถึงได้)
 if (usePglite && process.env.NODE_ENV === 'production') {
-  throw new Error('❌ ต้องตั้ง DATABASE_URL ในโหมด production (ไม่งั้นข้อมูลจะไม่ถูกบันทึกถาวร)');
+  console.error('⚠️ DATABASE_URL ไม่ถูกตั้งใน production');
 }
 let _client = null;
 let _readyP = null;

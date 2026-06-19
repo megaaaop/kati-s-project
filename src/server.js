@@ -3,15 +3,9 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 
-// fail-fast เมื่อ env จำเป็นไม่ครบ — throw เพื่อให้ขึ้น log ชัดทั้งตอนรันในเครื่องและบน serverless
-if (!process.env.JWT_SECRET) {
-  console.error('❌ ไม่พบ JWT_SECRET — คัดลอก .env.example เป็น .env แล้วใส่ค่าก่อน');
-  throw new Error('JWT_SECRET is required');
-}
-if (!process.env.STAFF_SIGNUP_CODE) {
-  console.error('❌ ไม่พบ STAFF_SIGNUP_CODE — ต้องตั้งรหัสลับสำหรับครู/ผู้บริหารก่อน (ดู .env.example)');
-  throw new Error('STAFF_SIGNUP_CODE is required');
-}
+// (ชั่วคราว) ไม่ throw เพื่อให้ /api/_diag เข้าถึงได้ — จะคืน fail-fast หลังแก้เสร็จ
+if (!process.env.JWT_SECRET) console.error('❌ ไม่พบ JWT_SECRET');
+if (!process.env.STAFF_SIGNUP_CODE) console.error('❌ ไม่พบ STAFF_SIGNUP_CODE');
 
 const authRoutes = require('./routes/auth.routes');
 const requestRoutes = require('./routes/requests.routes');
@@ -38,9 +32,19 @@ app.use((req, res, next) => {
 // ----- API -----
 app.get('/api/health', (req, res) => res.json({ ok: true, status: 'up' }));
 
-// ตัวตรวจชั่วคราว (ลบหลังแก้เสร็จ): ลองต่อ DB + เช็คตาราง users เพื่อดู error จริง
+// ตัวตรวจชั่วคราว (ลบหลังแก้เสร็จ): รายงานว่า env ตัวไหนมี (true/false, ไม่โชว์ค่า) + ลองต่อ DB
 app.get('/api/_diag', async (req, res) => {
-  const out = { usePglite: !process.env.DATABASE_URL, hasUrl: !!process.env.DATABASE_URL };
+  const out = {
+    env: {
+      NODE_ENV: process.env.NODE_ENV || '(unset)',
+      JWT_SECRET: !!process.env.JWT_SECRET,
+      STAFF_SIGNUP_CODE: !!process.env.STAFF_SIGNUP_CODE,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      SUPABASE_URL: !!process.env.SUPABASE_URL,
+      SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
+      SUPABASE_BUCKET: !!process.env.SUPABASE_BUCKET,
+    },
+  };
   try {
     const db = require('./db');
     await db.query('SELECT 1');
