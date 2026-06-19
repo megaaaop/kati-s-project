@@ -37,6 +37,25 @@ app.use((req, res, next) => {
 
 // ----- API -----
 app.get('/api/health', (req, res) => res.json({ ok: true, status: 'up' }));
+
+// ตัวตรวจชั่วคราว (ลบหลังแก้เสร็จ): ลองต่อ DB + เช็คตาราง users เพื่อดู error จริง
+app.get('/api/_diag', async (req, res) => {
+  const out = { usePglite: !process.env.DATABASE_URL, hasUrl: !!process.env.DATABASE_URL };
+  try {
+    const db = require('./db');
+    await db.query('SELECT 1');
+    out.connect = 'ok';
+    try {
+      const r = await db.query('SELECT COUNT(*) AS n FROM users');
+      out.usersTable = 'ok (' + r[0].n + ' rows)';
+    } catch (e2) {
+      out.usersTable = 'FAIL: ' + e2.message + ' [' + (e2.code || '') + ']';
+    }
+  } catch (e) {
+    out.connect = 'FAIL: ' + e.message + ' [' + (e.code || '') + ']';
+  }
+  res.json(out);
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/attachments', attachmentRoutes);
