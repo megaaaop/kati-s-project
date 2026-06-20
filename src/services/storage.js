@@ -8,13 +8,19 @@ const BUCKET = process.env.SUPABASE_BUCKET || 'attachments';
 const LOCAL_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
 const mode = useSupabase ? 'supabase' : (process.env.NODE_ENV === 'test' ? 'memory' : 'local');
 
+// สร้าง client/โฟลเดอร์แบบ lazy — ห้าม throw ตอนโหลดโมดูล (กัน Vercel ล่มตั้งแต่ init)
 let supabase;
 const mem = new Map();
-if (mode === 'supabase') {
-  const { createClient } = require('@supabase/supabase-js');
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-} else if (mode === 'local') {
-  fs.mkdirSync(LOCAL_DIR, { recursive: true });
+function getSupabase() {
+  if (!supabase) {
+    const { createClient } = require('@supabase/supabase-js');
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  }
+  return supabase;
+}
+let _localReady = false;
+function ensureLocalDir() {
+  if (!_localReady) { fs.mkdirSync(LOCAL_DIR, { recursive: true }); _localReady = true; }
 }
 
 // สร้าง object key แบบสุ่ม + นามสกุล
@@ -24,18 +30,19 @@ function newKey(ext) {
 
 async function put(key, buffer, contentType) {
   if (mode === 'supabase') {
-    const { error } = await supabase.storage.from(BUCKET).upload(key, buffer, { contentType, upsert: false });
+    const { error } = await getSupabase().storage.from(BUCKET).upload(key, buffer, { contentType, upsert: false });
     if (error) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ: ' + error.message);
   } else if (mode === 'memory') {
     mem.set(key, buffer);
   } else {
+    ensureLocalDir();
     fs.writeFileSync(path.join(LOCAL_DIR, path.basename(key)), buffer);
   }
 }
 
 async function get(key) {
   if (mode === 'supabase') {
-    const { data, error } = await supabase.storage.from(BUCKET).download(key);
+    const { data, error } = await getSupabase().storage.from(BUCKET).download(key);
     if (error || !data) throw new Error('ไม่พบไฟล์');
     return Buffer.from(await data.arrayBuffer());
   } else if (mode === 'memory') {
