@@ -50,6 +50,7 @@ function wireCreate() {
       email: form.email.value.trim(),
       password: form.password.value,
       role: form.role.value,
+      student_id: form.student_id.value.trim(),
       class_room: form.class_room.value.trim(),
       grade_level: form.grade_level.value.trim(),
     };
@@ -76,7 +77,10 @@ function openEdit(id) {
   document.getElementById('editErr').classList.add('d-none');
   document.getElementById('eId').value = u.id;
   document.getElementById('eName').value = u.full_name;
+  document.getElementById('eEmail').value = u.email || '';
+  document.getElementById('ePassword').value = '';
   document.getElementById('eRole').value = u.role;
+  document.getElementById('eStudentId').value = u.student_id || '';
   document.getElementById('eClass').value = u.class_room || '';
   document.getElementById('eGrade').value = u.grade_level || '';
   document.getElementById('eAdvisor').innerHTML = optionList(homerooms(), u.advisor_id, '— ไม่กำหนด —');
@@ -90,12 +94,16 @@ async function saveEdit() {
   err.classList.add('d-none');
   const body = {
     full_name: document.getElementById('eName').value.trim(),
+    email: document.getElementById('eEmail').value.trim(),
     role: document.getElementById('eRole').value,
+    student_id: document.getElementById('eStudentId').value.trim(),
     class_room: document.getElementById('eClass').value.trim(),
     grade_level: document.getElementById('eGrade').value.trim(),
     advisor_id: document.getElementById('eAdvisor').value || null,
     parent_id: document.getElementById('eParent').value || null,
   };
+  const pw = document.getElementById('ePassword').value;
+  if (pw) body.password = pw;
   try {
     await apiFetch('/api/users/' + id, { method: 'PUT', body: JSON.stringify(body) });
     editModal.hide();

@@ -46,11 +46,38 @@ async function update(req, res, next) {
     if (fields.role && !VALID_ROLES.includes(fields.role)) {
       return res.status(400).json({ error: 'บทบาทไม่ถูกต้อง' });
     }
+
+    // รีเซ็ตรหัสผ่าน (ถ้าส่ง password มาและไม่ว่าง) — เข้ารหัสแล้วอัปเดตแยกจาก field ทั่วไป
+    const newPassword = fields.password;
+    delete fields.password;
+    if (newPassword != null && String(newPassword) !== '') {
+      if (String(newPassword).length < 6) {
+        return res.status(400).json({ error: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' });
+      }
+      await userModel.updatePassword(id, await bcrypt.hash(String(newPassword), 10));
+    }
+
+    // อีเมล: normalize + กันซ้ำกับผู้ใช้คนอื่น; ถ้าเว้นว่างถือว่าไม่เปลี่ยน
+    if (Object.prototype.hasOwnProperty.call(fields, 'email')) {
+      const email = String(fields.email || '').trim().toLowerCase();
+      if (!email) {
+        delete fields.email;
+      } else {
+        const clash = await userModel.findByEmail(email);
+        if (clash && clash.id !== id) {
+          return res.status(409).json({ error: 'อีเมลนี้ถูกใช้ไปแล้ว' });
+        }
+        fields.email = email;
+      }
+    }
+
     const role = fields.role || existing.role;
 
     if (role === 'student') {
       const cls = Object.prototype.hasOwnProperty.call(fields, 'class_room') ? fields.class_room : existing.class_room;
-      fields.grade_level = deriveGrade(cls);
+      // ระดับชั้น: ถ้าแอดมินกรอกมาเองให้ใช้ค่านั้น; ถ้าเว้นว่างให้คำนวณจากห้องอัตโนมัติ
+      const sentGrade = Object.prototype.hasOwnProperty.call(fields, 'grade_level') ? String(fields.grade_level || '').trim() : '';
+      fields.grade_level = sentGrade || deriveGrade(cls);
     } else {
       fields.student_id = null;
       fields.class_room = null;

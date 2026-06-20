@@ -34,6 +34,7 @@
               <option value="admin">แอดมิน</option>
             </select>
           </div>
+          <div class="col-md-4"><input class="form-control" name="student_id" id="cStudentId" placeholder="รหัสนักเรียน (นักเรียน)"></div>
           <div class="col-md-4"><input class="form-control" name="class_room" id="cClass" placeholder="ห้อง เช่น ม.5/2 (นักเรียน)"></div>
           <div class="col-md-4"><input class="form-control" name="grade_level" id="cGrade" placeholder="ระดับที่ดูแล เช่น ม.5 หรือ ทุกระดับ"></div>
           <div class="col-12"><button class="btn btn-brand btn-sm" type="submit">บันทึก</button></div>
@@ -60,6 +61,8 @@
           <div id="editErr" class="alert alert-danger d-none"></div>
           <input type="hidden" id="eId">
           <div class="mb-2"><label class="form-label">ชื่อ</label><input class="form-control" id="eName"></div>
+          <div class="mb-2"><label class="form-label">อีเมล</label><input class="form-control" id="eEmail" type="email"></div>
+          <div class="mb-2"><label class="form-label">รหัสผ่านใหม่ <span class="muted small">(เว้นว่าง = ไม่เปลี่ยน, ≥6 ตัว)</span></label><input class="form-control" id="ePassword" type="text" autocomplete="new-password" placeholder="เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน"></div>
           <div class="mb-2"><label class="form-label">บทบาท</label>
             <select class="form-select" id="eRole">
               <option value="student">นักเรียน</option><option value="parent">ผู้ปกครอง</option>
@@ -67,6 +70,7 @@
               <option value="deputy">รองผอ</option><option value="principal">ผอ</option><option value="admin">แอดมิน</option>
             </select>
           </div>
+          <div class="mb-2"><label class="form-label">รหัสนักเรียน (สำหรับนักเรียน)</label><input class="form-control" id="eStudentId"></div>
           <div class="mb-2"><label class="form-label">ห้อง (นักเรียน)</label><input class="form-control" id="eClass"></div>
           <div class="mb-2"><label class="form-label">ระดับชั้น / ที่ดูแล</label><input class="form-control" id="eGrade" placeholder="เช่น ม.5 หรือ ทุกระดับ"></div>
           <div class="mb-2"><label class="form-label">ครูประจำชั้น (สำหรับนักเรียน)</label><select class="form-select" id="eAdvisor"></select></div>

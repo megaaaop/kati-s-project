@@ -148,6 +148,25 @@ test('admin delete: 409 for referenced, 200 for unreferenced; update re-derives 
   assert.equal(upd.d.user.grade_level, 'ม.6');
 });
 
+test('admin edits email + resets password + sets student_id + overrides grade', async () => {
+  const t = await j('/api/users', { method: 'POST', token: tok.adm, body: { full_name: 'เป้าหมาย', email: 'target@t.com', password: 'pass123', role: 'student', class_room: 'ม.4/3' } });
+  const tid = t.d.user.id;
+  const up = await j('/api/users/' + tid, { method: 'PUT', token: tok.adm, body: {
+    email: 'NewMail@T.com', password: 'newpass1', role: 'student', student_id: 'STD-999', class_room: 'ม.4/3', grade_level: 'ม.6',
+  } });
+  assert.equal(up.status, 200);
+  assert.equal(up.d.user.email, 'newmail@t.com');   // normalize อีเมล
+  assert.equal(up.d.user.student_id, 'STD-999');    // ตั้งรหัสนักเรียนได้
+  assert.equal(up.d.user.grade_level, 'ม.6');       // override ชนะ auto-derive (ม.4)
+  // รหัสใหม่ใช้ได้, รหัสเก่าใช้ไม่ได้
+  assert.equal((await j('/api/auth/login', { method: 'POST', body: { email: 'newmail@t.com', password: 'newpass1' } })).status, 200);
+  assert.equal((await j('/api/auth/login', { method: 'POST', body: { email: 'newmail@t.com', password: 'pass123' } })).status, 401);
+  // กันอีเมลซ้ำกับผู้ใช้อื่น (อีเมลแอดมิน a@t.com)
+  assert.equal((await j('/api/users/' + tid, { method: 'PUT', token: tok.adm, body: { email: 'a@t.com' } })).status, 409);
+  // รหัสสั้นเกิน → 400
+  assert.equal((await j('/api/users/' + tid, { method: 'PUT', token: tok.adm, body: { password: '123' } })).status, 400);
+});
+
 test('notifications: list + mark read', async () => {
   const n = await j('/api/notifications', { token: tok.stu });
   assert.ok(n.d.unread > 0);

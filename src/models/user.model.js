@@ -48,7 +48,7 @@ function listUsers() {
 }
 
 async function updateUser(id, fields) {
-  const allowed = ['full_name', 'role', 'class_room', 'grade_level', 'advisor_id', 'parent_id', 'student_id'];
+  const allowed = ['full_name', 'email', 'role', 'class_room', 'grade_level', 'advisor_id', 'parent_id', 'student_id'];
   const sets = [];
   const params = [];
   for (const key of allowed) {
@@ -65,6 +65,11 @@ async function updateUser(id, fields) {
 
 function deleteUser(id) { return db.query('DELETE FROM users WHERE id = $1', [id]); }
 
+// แอดมินรีเซ็ตรหัสผ่านให้ผู้ใช้ (รับ hash ที่ controller เข้ารหัสมาแล้ว)
+function updatePassword(id, password_hash) {
+  return db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, id]);
+}
+
 async function countReferences(id) {
   const row = await db.one(`
     SELECT
@@ -79,5 +84,5 @@ async function countReferences(id) {
 module.exports = {
   createUser, findByEmail, findById,
   findApproversForLevel, findChildren, findByRole,
-  listUsers, updateUser, deleteUser, countReferences,
+  listUsers, updateUser, updatePassword, deleteUser, countReferences,
 };
