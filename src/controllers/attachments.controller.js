@@ -41,7 +41,13 @@ async function uploadAttachment(req, res, next) {
 
     const ext = MIME_EXT[req.file.mimetype] || '';
     const key = storage.newKey(ext);
-    await storage.put(key, buffer, req.file.mimetype);
+    try {
+      await storage.put(key, buffer, req.file.mimetype);
+    } catch (e) {
+      // เผยข้อความจริงจากคลังเก็บ (Supabase Storage) เพื่อบอกสาเหตุ เช่น bucket ผิด/สิทธิ์ไม่พอ
+      console.error('storage.put failed:', e);
+      return res.status(502).json({ error: 'อัปโหลดไฟล์ไปที่คลังเก็บไม่สำเร็จ: ' + e.message });
+    }
 
     // multer ถอดชื่อไฟล์เป็น latin1 → แปลงกลับเป็น utf8
     const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
