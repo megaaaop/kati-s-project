@@ -1,5 +1,5 @@
 // ป้ายข้อความ/สถานะ + ตัวช่วยแสดงผลที่ใช้ร่วมหลายหน้า
-const TYPE_LABEL = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม' };
+const TYPE_LABEL = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม', dorm_stay: 'ใบอยู่หอ' };
 const STATUS_INFO = {
   pending: { t: 'รอพิจารณา', c: 'status-pending' },
   approved: { t: 'อนุมัติแล้ว', c: 'status-approved' },

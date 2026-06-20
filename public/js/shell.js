@@ -5,6 +5,7 @@ function navLinks(role) {
   if (role === 'student') return [
     { key: 'home', label: 'หน้าหลัก', href: '/student/dashboard.html' },
     { key: 'new', label: 'ยื่นใบลา', href: '/student/request-new.html' },
+    { key: 'dormnew', label: 'ยื่นใบอยู่หอ', href: '/student/dorm-stay-new.html' },
     { key: 'mine', label: 'คำขอของฉัน', href: '/student/my-requests.html' },
   ];
   if (APPROVER_ROLES_CLIENT.includes(role)) return [

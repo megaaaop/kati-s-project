@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS leave_requests (
   id            SERIAL PRIMARY KEY,
   student_id    INTEGER NOT NULL REFERENCES users(id),
-  leave_type    TEXT NOT NULL CHECK (leave_type IN ('sick','personal','activity')),
+  leave_type    TEXT NOT NULL CHECK (leave_type IN ('sick','personal','activity','dorm_stay')),
   start_date    DATE NOT NULL,
   end_date      DATE NOT NULL,
   reason        TEXT NOT NULL,

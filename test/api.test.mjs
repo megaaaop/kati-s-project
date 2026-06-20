@@ -110,6 +110,22 @@ test('approved request has 5 recorded steps', async () => {
   assert.ok(det.d.steps.every((s) => s.decision === 'approved' && s.approver_name));
 });
 
+test('dorm_stay (ใบอยู่หอ) walks the same 5-level chain', async () => {
+  const c = await j('/api/requests', { method: 'POST', token: tok.stu, body: {
+    leave_type: 'dorm_stay', start_date: '2026-08-01', end_date: '2026-08-03', reason: 'อยู่หอสุดสัปดาห์',
+  } });
+  assert.equal(c.status, 201);
+  assert.equal(c.d.request.leave_type, 'dorm_stay');
+  assert.equal(c.d.request.current_level, 1);
+  const id = c.d.request.id;
+  const decide = (token) => j(`/api/requests/${id}/decide`, { method: 'PUT', token, body: { decision: 'approved' } });
+  assert.equal((await decide(tok.home)).d.request.current_level, 2);
+  assert.equal((await decide(tok.grade)).d.request.current_level, 3);
+  assert.equal((await decide(tok.dorm)).d.request.current_level, 4);
+  assert.equal((await decide(tok.dep)).d.request.current_level, 5);
+  assert.equal((await decide(tok.pri)).d.request.status, 'approved');
+});
+
 test('reject terminates with required note', async () => {
   const c = await j('/api/requests', { method: 'POST', token: tok.stu, body: { leave_type: 'personal', start_date: '2026-07-01', end_date: '2026-07-01', reason: 'ธุระ' } });
   assert.equal((await j(`/api/requests/${c.d.request.id}/decide`, { method: 'PUT', token: tok.home, body: { decision: 'rejected' } })).status, 400);
@@ -144,6 +160,7 @@ test('stats: aggregates for admin, scoped for approver, blocked for student', as
   assert.equal(s.status, 200);
   assert.ok(s.d.total >= 2);
   assert.equal(typeof s.d.byStatus.approved, 'number');
+  assert.ok(s.d.byType.dorm_stay >= 1); // ใบอยู่หอถูกนับในสถิติ
   assert.ok(Array.isArray(s.d.byMonth) && Array.isArray(s.d.topStudents));
   assert.equal((await j('/api/stats', { token: tok.home })).status, 200); // approver scoped
   assert.equal((await j('/api/stats', { token: tok.stu })).status, 403);  // student blocked
@@ -161,7 +178,9 @@ test('CSV export: 200, text/csv, BOM + Thai header', async () => {
   assert.match(r.headers.get('content-type'), /text\/csv/);
   const buf = new Uint8Array(await r.arrayBuffer());
   assert.deepEqual([buf[0], buf[1], buf[2]], [0xEF, 0xBB, 0xBF]); // UTF-8 BOM ให้ Excel อ่านไทยถูก
-  assert.match(new TextDecoder('utf-8').decode(buf), /นักเรียน/);
+  const csv = new TextDecoder('utf-8').decode(buf);
+  assert.match(csv, /นักเรียน/);
+  assert.match(csv, /ใบอยู่หอ/); // ประเภทใบอยู่หอแสดงใน CSV
 });
 
 test('admin self-register locked after first admin exists (bootstrap-only)', async () => {

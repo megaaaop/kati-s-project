@@ -5,8 +5,11 @@ const userModel = require('../models/user.model');
 const { notify } = require('../services/notify');
 const { roleForLevel, labelForLevel, levelForRole, APPROVER_ROLES } = require('../config/approval');
 
-const VALID_TYPES = ['sick', 'personal', 'activity'];
+const VALID_TYPES = ['sick', 'personal', 'activity', 'dorm_stay'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// ชื่อเอกสารตามประเภท (ใช้ในข้อความแจ้งเตือน): ใบอยู่หอ vs ใบลา
+const docLabel = (t) => (t === 'dorm_stay' ? 'ใบอยู่หอ' : 'ใบลา');
 
 // ----- F2: นักเรียนยื่นใบลา -----
 async function createRequest(req, res, next) {
@@ -28,21 +31,22 @@ async function createRequest(req, res, next) {
     const student = await userModel.findById(req.user.id);
     const approvers = await userModel.findApproversForLevel(1, student);
     if (approvers.length === 0) {
-      return res.status(409).json({ error: 'ยังไม่ได้กำหนดครูประจำชั้นให้คุณ กรุณาติดต่อผู้ดูแลระบบก่อนยื่นใบลา' });
+      return res.status(409).json({ error: `ยังไม่ได้กำหนดครูประจำชั้นให้คุณ กรุณาติดต่อผู้ดูแลระบบก่อนยื่น${docLabel(leave_type)}` });
     }
 
     const request = await requestModel.createRequest({
       student_id: req.user.id, leave_type, start_date, end_date, reason: String(reason).trim(),
     });
 
+    const doc = docLabel(leave_type);
     await notify(approvers, {
-      request_id: request.id, subject: 'มีใบลารออนุมัติ',
-      message: `นักเรียน ${student.full_name} ยื่นใบลา รอพิจารณา (${labelForLevel(1)})`,
+      request_id: request.id, subject: `มี${doc}รออนุมัติ`,
+      message: `นักเรียน ${student.full_name} ยื่น${doc} รอพิจารณา (${labelForLevel(1)})`,
     });
     if (student.parent_id) {
       await notify([student.parent_id], {
-        request_id: request.id, subject: 'บุตรหลานยื่นใบลา',
-        message: `บุตรหลาน (${student.full_name}) ยื่นใบลาเข้าระบบแล้ว`,
+        request_id: request.id, subject: `บุตรหลานยื่น${doc}`,
+        message: `บุตรหลาน (${student.full_name}) ยื่น${doc}เข้าระบบแล้ว`,
       });
     }
     return res.status(201).json({ request });
@@ -65,7 +69,7 @@ async function exportCsv(req, res, next) {
   try {
     const user = await userModel.findById(req.user.id);
     const rows = await requestModel.listForUser(user);
-    const TYPE = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม' };
+    const TYPE = { sick: 'ลาป่วย', personal: 'ลากิจ', activity: 'ลากิจกรรม', dorm_stay: 'ใบอยู่หอ' };
     const STAT = { pending: 'รอพิจารณา', approved: 'อนุมัติแล้ว', rejected: 'ไม่อนุมัติ' };
     const esc = (v) => {
       let s = v == null ? '' : String(v);
@@ -154,15 +158,16 @@ async function decideRequest(req, res, next) {
 }
 
 async function notifyDecision({ request, updated, student, decision, note, levelLabel }) {
+  const doc = docLabel(request.leave_type);
   if (decision === 'rejected') {
     await notify([student.id], {
-      request_id: request.id, subject: 'ใบลาไม่อนุมัติ',
-      message: `ใบลาของคุณ "ไม่อนุมัติ" โดย${levelLabel}: ${note}`,
+      request_id: request.id, subject: `${doc}ไม่อนุมัติ`,
+      message: `${doc}ของคุณ "ไม่อนุมัติ" โดย${levelLabel}: ${note}`,
     });
     if (student.parent_id) {
       await notify([student.parent_id], {
-        request_id: request.id, subject: 'ใบลาบุตรหลานไม่อนุมัติ',
-        message: `ใบลาของบุตรหลาน (${student.full_name}) ไม่อนุมัติโดย${levelLabel}`,
+        request_id: request.id, subject: `${doc}บุตรหลานไม่อนุมัติ`,
+        message: `${doc}ของบุตรหลาน (${student.full_name}) ไม่อนุมัติโดย${levelLabel}`,
       });
     }
     return;
@@ -170,13 +175,13 @@ async function notifyDecision({ request, updated, student, decision, note, level
 
   if (updated.status === 'approved') {
     await notify([student.id], {
-      request_id: request.id, subject: 'ใบลาอนุมัติสมบูรณ์',
-      message: 'ใบลาของคุณได้รับอนุมัติครบทุกขั้นแล้ว ✅',
+      request_id: request.id, subject: `${doc}อนุมัติสมบูรณ์`,
+      message: `${doc}ของคุณได้รับอนุมัติครบทุกขั้นแล้ว ✅`,
     });
     if (student.parent_id) {
       await notify([student.parent_id], {
-        request_id: request.id, subject: 'ใบลาบุตรหลานอนุมัติ',
-        message: `ใบลาของบุตรหลาน (${student.full_name}) ได้รับอนุมัติสมบูรณ์`,
+        request_id: request.id, subject: `${doc}บุตรหลานอนุมัติ`,
+        message: `${doc}ของบุตรหลาน (${student.full_name}) ได้รับอนุมัติสมบูรณ์`,
       });
     }
     return;
@@ -193,12 +198,12 @@ async function notifyDecision({ request, updated, student, decision, note, level
     console.warn(`⚠️ คำขอ #${request.id} ค้างที่ขั้น ${nextLabel}: ไม่มีผู้อนุมัติในขอบเขต`);
   }
   await notify(nextApprovers, {
-    request_id: request.id, subject: 'มีใบลารอพิจารณา',
-    message: `มีใบลาของนักเรียน ${student.full_name} รอพิจารณา (${nextLabel})`,
+    request_id: request.id, subject: `มี${doc}รอพิจารณา`,
+    message: `มี${doc}ของนักเรียน ${student.full_name} รอพิจารณา (${nextLabel})`,
   });
   await notify([student.id], {
-    request_id: request.id, subject: 'ความคืบหน้าใบลา',
-    message: `ใบลาของคุณผ่าน${levelLabel}แล้ว กำลังรอ${nextLabel}`,
+    request_id: request.id, subject: `ความคืบหน้า${doc}`,
+    message: `${doc}ของคุณผ่าน${levelLabel}แล้ว กำลังรอ${nextLabel}`,
   });
 }
 

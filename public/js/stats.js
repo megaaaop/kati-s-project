@@ -16,8 +16,11 @@ async function load() {
     renderTop(s);
     // doughnut: ตามประเภท
     chart('typeChart', 'doughnut', {
-      labels: ['ลาป่วย', 'ลากิจ', 'ลากิจกรรม'],
-      datasets: [{ data: [s.byType.sick, s.byType.personal, s.byType.activity], backgroundColor: PALETTE.slice(0, 3) }],
+      labels: ['ลาป่วย', 'ลากิจ', 'ลากิจกรรม', 'ใบอยู่หอ'],
+      datasets: [{
+        data: [s.byType.sick || 0, s.byType.personal || 0, s.byType.activity || 0, s.byType.dorm_stay || 0],
+        backgroundColor: PALETTE.slice(0, 4),
+      }],
     }, { plugins: { legend: { position: 'bottom' } } });
     // bar: ตามเดือน
     chart('monthChart', 'bar', {
