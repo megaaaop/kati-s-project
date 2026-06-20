@@ -3,9 +3,9 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 
-// (ชั่วคราว) ไม่ throw เพื่อให้ /api/_diag เข้าถึงได้ — จะคืน fail-fast หลังแก้เสร็จ
-if (!process.env.JWT_SECRET) console.error('❌ ไม่พบ JWT_SECRET');
-if (!process.env.STAFF_SIGNUP_CODE) console.error('❌ ไม่พบ STAFF_SIGNUP_CODE');
+// ต้องมีค่าลับเหล่านี้เสมอ — ขาดแล้วหยุดทันที (fail-fast กันรันแบบไม่ปลอดภัย)
+if (!process.env.JWT_SECRET) throw new Error('ต้องตั้งค่า environment variable: JWT_SECRET');
+if (!process.env.STAFF_SIGNUP_CODE) throw new Error('ต้องตั้งค่า environment variable: STAFF_SIGNUP_CODE');
 
 const authRoutes = require('./routes/auth.routes');
 const requestRoutes = require('./routes/requests.routes');
@@ -32,38 +32,6 @@ app.use((req, res, next) => {
 // ----- API -----
 app.get('/api/health', (req, res) => res.json({ ok: true, status: 'up' }));
 
-// ตัวตรวจชั่วคราว (ลบหลังแก้เสร็จ): รายงานว่า env ตัวไหนมี (true/false, ไม่โชว์ค่า) + ลองต่อ DB
-app.get('/api/_diag', async (req, res) => {
-  const out = {
-    env: {
-      NODE_ENV: process.env.NODE_ENV || '(unset)',
-      JWT_SECRET: !!process.env.JWT_SECRET,
-      STAFF_SIGNUP_CODE: !!process.env.STAFF_SIGNUP_CODE,
-      DATABASE_URL: !!process.env.DATABASE_URL,
-      SUPABASE_URL: !!process.env.SUPABASE_URL,
-      SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
-      SUPABASE_BUCKET: !!process.env.SUPABASE_BUCKET,
-    },
-  };
-  try {
-    const db = require('./db');
-    await db.query('SELECT 1');
-    out.connect = 'ok';
-    if (req.query.cleanup === 'diagtest') {
-      const del = await db.query("DELETE FROM users WHERE email LIKE 'diagtest%' RETURNING id");
-      out.cleaned = del.length;
-    }
-    try {
-      const r = await db.query('SELECT COUNT(*) AS n FROM users');
-      out.usersTable = 'ok (' + r[0].n + ' rows)';
-    } catch (e2) {
-      out.usersTable = 'FAIL: ' + e2.message + ' [' + (e2.code || '') + ']';
-    }
-  } catch (e) {
-    out.connect = 'FAIL: ' + e.message + ' [' + (e.code || '') + ']';
-  }
-  res.json(out);
-});
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/attachments', attachmentRoutes);
