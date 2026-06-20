@@ -49,6 +49,10 @@ app.get('/api/_diag', async (req, res) => {
     const db = require('./db');
     await db.query('SELECT 1');
     out.connect = 'ok';
+    if (req.query.cleanup === 'diagtest') {
+      const del = await db.query("DELETE FROM users WHERE email LIKE 'diagtest%' RETURNING id");
+      out.cleaned = del.length;
+    }
     try {
       const r = await db.query('SELECT COUNT(*) AS n FROM users');
       out.usersTable = 'ok (' + r[0].n + ' rows)';
